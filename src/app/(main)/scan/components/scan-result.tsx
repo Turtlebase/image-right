@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import RiskBadge from '@/components/shared/risk-badge';
 import AiAdvice from './ai-advice';
-import { User, Globe, Download, Share2, Info, FileQuestion, Loader2 } from 'lucide-react';
+import { User, Globe, Download, Share2, Info, FileQuestion, Loader2, Copy } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -27,19 +27,14 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
   const { resolvedTheme } = useTheme();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [canShare, setCanShare] = useState(false);
+  const [isShareSupported, setIsShareSupported] = useState(false);
 
   useEffect(() => {
-    if (typeof navigator.share !== 'undefined' && typeof navigator.canShare !== 'undefined') {
-        const shareData = {
-          title: 'ImageRights AI Scan Report',
-          text: `Here's my image copyright report:\n- Status: ${data.copyrightStatus}\n- Risk Level: ${data.riskLevel}\n- License: ${data.license}`,
-        };
-        if (navigator.canShare(shareData)) {
-          setCanShare(true);
-        }
+    // Check for Web Share API support on the client
+    if (typeof navigator.share !== 'undefined') {
+        setIsShareSupported(true);
     }
-  }, [data]);
+  }, []);
 
   const handleDownloadPdf = async () => {
     const reportElement = reportRef.current;
@@ -76,26 +71,43 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
     }
   };
 
+  const getShareText = () => {
+    return `ImageRights AI Scan Report:\n- Status: ${data.copyrightStatus}\n- Risk: ${data.riskLevel}\n- License: ${data.license}`;
+  }
+
   const handleShare = async () => {
     const shareData = {
       title: 'ImageRights AI Scan Report',
-      text: `Here's my image copyright report:\n- Status: ${data.copyrightStatus}\n- Risk Level: ${data.riskLevel}\n- License: ${data.license}`,
+      text: getShareText(),
     };
 
-    try {
-      if (navigator.share && navigator.canShare(shareData)) {
+    if (navigator.share) {
+      try {
         await navigator.share(shareData);
-      } else {
-        throw new Error("Web Share API not supported or data cannot be shared.");
+      } catch (error) {
+         if ((error as Error).name !== 'AbortError') {
+          toast({
+            variant: "destructive",
+            title: "Sharing Failed",
+            description: "Could not share the report at this time.",
+          });
+        }
       }
-    } catch (error) {
-       if ((error as Error).name !== 'AbortError') {
-        toast({
-          variant: "destructive",
-          title: "Sharing Failed",
-          description: "Could not share the report at this time.",
-        });
-      }
+    } else {
+        // Fallback for browsers that do not support navigator.share
+        try {
+            await navigator.clipboard.writeText(getShareText());
+            toast({
+                title: "Copied to Clipboard",
+                description: "Report details have been copied to your clipboard.",
+            });
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "Copy Failed",
+                description: "Could not copy the report to your clipboard.",
+            });
+        }
     }
   };
 
@@ -199,8 +211,9 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
           {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
           {isDownloading ? 'Saving...' : 'PDF'}
         </Button>
-        <Button className="h-12 text-base" onClick={handleShare} disabled={!canShare}>
-          <Share2 className="mr-2 h-5 w-5" /> Share
+        <Button className="h-12 text-base" onClick={handleShare}>
+            {isShareSupported ? <Share2 className="mr-2 h-5 w-5" /> : <Copy className="mr-2 h-5 w-5" />}
+            {isShareSupported ? 'Share' : 'Copy'}
         </Button>
       </div>
     </>
