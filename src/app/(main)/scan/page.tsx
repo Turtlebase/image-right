@@ -24,7 +24,7 @@ export default function ScanPage() {
   const [scanResult, setScanResult] = useState<ScanResultData | null>(null);
   const { toast } = useToast();
   const { user } = useTelegram();
-  const { subscription, recordScan, canScan } = useSubscription();
+  const { subscription, recordScan, canScan, isInitialized } = useSubscription();
   const scanStatus = canScan();
 
   const handleImageUpload = (file: File) => {
@@ -112,6 +112,14 @@ export default function ScanPage() {
     };
   }, []);
 
+  if (!isInitialized) {
+    return (
+       <div className="flex flex-col items-center justify-center h-full text-center p-4">
+        <Loader2 className="h-16 w-16 text-primary animate-spin" />
+        <h2 className="text-2xl font-semibold mt-6">Loading...</h2>
+      </div>
+    )
+  }
 
   if (isScanning) {
     return (

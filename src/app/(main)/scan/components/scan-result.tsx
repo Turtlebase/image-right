@@ -16,6 +16,7 @@ import { useTheme } from 'next-themes';
 import { useSubscription } from '@/hooks/useSubscription';
 import Link from 'next/link';
 import { useTelegram } from '@/components/telegram-provider';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
   imageUrl: string; // Can be a full data URI or a thumbnail data URI
@@ -33,7 +34,7 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
   const { toast } = useToast();
   const { resolvedTheme } = useTheme();
   const { user } = useTelegram();
-  const { subscription } = useSubscription();
+  const { subscription, isInitialized } = useSubscription();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isShareSupported, setIsShareSupported] = useState(false);
@@ -169,6 +170,16 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
         setIsUnlocking(false);
     });
   };
+
+  if (!isInitialized) {
+    return (
+      <div className="space-y-6 p-4">
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
 
   const showPremiumFeatures = subscription.plan === 'Premium' || isUnlocked;
 

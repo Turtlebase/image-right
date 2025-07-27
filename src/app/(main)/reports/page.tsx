@@ -16,7 +16,7 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<ScanHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { subscription } = useSubscription();
+  const { subscription, isInitialized } = useSubscription();
 
   useEffect(() => {
     // History is loaded only on the client-side
@@ -30,10 +30,10 @@ export default function ReportsPage() {
         setLoading(false);
       }
     }
-    if (subscription.plan) {
+    if (isInitialized) {
         fetchHistory();
     }
-  }, [subscription.plan]);
+  }, [isInitialized, subscription.plan]);
 
   const handleReportClick = (report: ScanHistoryItem) => {
     // Pass the full report object via query params
@@ -42,7 +42,7 @@ export default function ReportsPage() {
   };
 
 
-  if (loading) {
+  if (loading || !isInitialized) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

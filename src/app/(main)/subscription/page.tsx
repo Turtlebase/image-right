@@ -39,7 +39,7 @@ const plans = {
 }
 
 export default function SubscriptionPage() {
-    const { subscription, setPlan } = useSubscription();
+    const { subscription, setPlan, isInitialized } = useSubscription();
     const { user } = useTelegram();
     const { toast } = useToast();
     const router = useRouter();
@@ -47,6 +47,14 @@ export default function SubscriptionPage() {
 
     const handleUpgrade = () => {
         setIsLoading(true);
+        
+        toast({
+            title: 'Coming Soon!',
+            description: 'Premium subscriptions are not yet available. Please check back later.',
+        });
+        setIsLoading(false);
+        return;
+
 
         const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
         const planId = process.env.NEXT_PUBLIC_RAZORPAY_PLAN_ID;
@@ -67,10 +75,6 @@ export default function SubscriptionPage() {
             name: "ImageRights AI Premium",
             description: "Monthly Subscription",
             handler: function (response: any) {
-                // This function is called on successful payment.
-                // In a real app, you would send response.razorpay_payment_id
-                // to your backend for verification and activation.
-                // For now, we simulate the upgrade on the client-side.
                 toast({
                     title: 'Subscription Successful!',
                     description: 'Welcome to Premium!',
@@ -80,8 +84,6 @@ export default function SubscriptionPage() {
             },
             prefill: {
                 name: user ? `${user.first_name} ${user.last_name || ''}`.trim() : '',
-                // email: user.email, // If you have user's email
-                // contact: user.phone_number, // If you have user's phone
             },
             notes: {
                 telegram_user_id: user?.id,
@@ -124,6 +126,15 @@ export default function SubscriptionPage() {
         }
     }
 
+    if (!isInitialized) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="mt-4">Loading plans...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="p-4 animate-in fade-in-50 duration-500">
             <div className="my-8 text-center">
@@ -153,7 +164,7 @@ export default function SubscriptionPage() {
                             {subscription.plan === plan.name ? (
                                 <Button disabled className="w-full">Current Plan</Button>
                             ) : (
-                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full" disabled={isLoading}>
+                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full" disabled={isLoading || plan.name === 'Premium'}>
                                     {isLoading && plan.name === 'Premium' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     {plan.name === 'Free' ? 'Downgrade to Free' : 'Upgrade to Premium'}
                                 </Button>

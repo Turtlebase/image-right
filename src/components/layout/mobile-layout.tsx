@@ -50,7 +50,10 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col h-screen w-full max-w-md mx-auto bg-background">
       <header className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">ImageRights AI</h1>
+             <Link href="/" className="flex items-center gap-2">
+                <AppLogo className="h-8 w-8" />
+                <h1 className="text-xl font-bold">ImageRights AI</h1>
+            </Link>
             {subscription.plan === 'Premium' && (
                 <Link href="/subscription">
                     <Star className="h-5 w-5 text-yellow-400" />

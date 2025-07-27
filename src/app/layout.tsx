@@ -21,9 +21,6 @@ export const metadata: Metadata = {
     title: "ImageRights AI",
     statusBarStyle: "default",
   },
-  icons: {
-    icon: '/icon.svg',
-  }
 };
 
 export const viewport: Viewport = {
