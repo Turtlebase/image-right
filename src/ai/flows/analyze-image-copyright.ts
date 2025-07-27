@@ -25,22 +25,22 @@ const AnalyzeImageCopyrightOutputSchema = z.object({
     .describe('A simple risk level classification for quick reference.'),
   copyrightStatus: z
     .string()
-    .describe("A descriptive status of the image's copyright (e.g., 'Public Domain (CC0)', 'Royalty-Free with Attribution', 'Protected by Copyright', 'Original Creation')."),
+    .describe("A descriptive status of the image's copyright (e.g., 'Public Domain (CC0)', 'Royalty-Free with Attribution', 'Protected by Copyright', 'Original Creation', 'Contains Copyrighted Elements')."),
   license: z
     .string()
-    .describe('The specific license associated with the image (e.g., CC0 1.0, MIT, Getty Images Royalty-Free, "All Rights Reserved by Creator").'),
+    .describe('The specific license associated with the image (e.g., CC0 1.0, MIT, Getty Images Royalty-Free, "All Rights Reserved by Creator", "Varies by Element").'),
   owner: z
     .string()
     .optional()
-    .describe('The identified copyright owner or creator of the image (e.g., "User / Creator").'),
+    .describe('The identified copyright owner or creator of the image (e.g., "User / Creator", "HBO/Warner Bros.").'),
   copyrightedElements: z
     .array(z.string())
     .optional()
-    .describe('A list of specific elements within the image that are identified as being copyrighted (e.g., "Mercedes-Benz logo", "G-Wagon vehicle design"). This should not include the subject of a photograph if it is a natural element like an animal or landscape.'),
+    .describe('A list of specific elements within the image that are identified as being copyrighted (e.g., "Daenerys Targaryen character", "Game of Thrones dragon design"). This should not include the subject of a photograph if it is a natural element like an animal or landscape.'),
   moderationInfo: z
     .string()
     .optional()
-    .describe('Provides context about the copyright status, especially for nuanced cases like photos of natural subjects or AI-generated images.'),
+    .describe('Provides context about the copyright status, especially for nuanced cases like photos of natural subjects or AI-generated images containing third-party IP.'),
   detectedOn: z
     .array(
       z.object({
@@ -67,31 +67,38 @@ const prompt = ai.definePrompt(
     prompt: `You are a world-class expert AI for intellectual property and copyright information. Your task is to conduct a highly accurate and robust analysis of the provided image to determine its copyright status and usage rights. It is critical that your analysis is precise and your findings are verifiable.
 
 **Analysis Steps:**
-1.  **Reverse Image Search:** Perform a comprehensive reverse image search to find the origin and distribution of this image online.
-2.  **Originality Check:** Based on the search, determine if this image is an original creation (e.g., user-generated, AI-generated art) or a pre-existing, distributed image.
-    *   **If the image is an original creation (no exact matches found online):** Set 'copyrightStatus' to "Original Creation", 'riskLevel' to "safe", 'owner' to "User / Creator", and 'license' to "All Rights Reserved by Creator". If it appears to be AI-generated, set 'moderationInfo' to: "This appears to be an original AI-generated image. You likely hold the copyright, though rights may be shared with the AI platform used. Always check the tool's terms of service."
-    *   **If the image is a pre-existing work:** Proceed with IP identification.
-3.  **IP Identification:** Analyze the image for any and all potential copyrightable material. This includes, but is not limited to:
-    *   Logos and branding (e.g., the Mercedes-Benz three-pointed star).
-    *   Product designs and trade dress (e.g., the specific vehicle design of the Mercedes-Benz G-Wagon).
-    *   Characters, cartoon illustrations, anime, or mascots.
-    *   Elements from movie posters, advertisements, or other promotional materials.
-    *   Artworks, photographs, or illustrations depicted within the image.
-    *   Any other recognizable intellectual property.
-4.  **Contextual Analysis:** Differentiate between the subject of the image and the image itself.
-    *   For photographs of natural subjects (like animals, landscapes), the subject itself is not copyrighted. The copyright applies to the *photograph* as a creative work. In these cases, set the 'moderationInfo' field to explain this nuance. For example: "While a lion is a part of nature and cannot be copyrighted, this specific photograph is a creative work and is likely protected by the photographer's copyright."
-    *   The 'copyrightedElements' field should only be populated if there are specific, distinct IP elements *within* the image (e.g., a logo on a shirt).
+1.  **IP Identification FIRST:** Before anything else, analyze the image content for any and all potential copyrightable material. This is the most important step. Look for:
+    *   **Characters:** Human or non-human characters from movies, TV shows (e.g., Daenerys Targaryen from Game of Thrones), video games, comic books, anime, or any fictional universe.
+    *   **Creatures/Designs:** Recognizable creatures or designs strongly associated with a specific IP (e.g., a dragon from Game of Thrones).
+    *   **Logos & Branding:** Corporate logos, symbols, or other branding elements.
+    *   **Product Designs:** The specific design and trade dress of products (e.g., a specific model of car).
+    *   **Artworks/Illustrations:** Famous paintings, illustrations, or other artworks depicted within the image.
+2.  **Reverse Image Search:** Now, perform a comprehensive reverse image search to find the origin and distribution of this image online.
+3.  **Synthesize Findings:** Combine the IP identification and reverse image search results to make a final determination.
 
-**Output Requirements:**
-Based on your analysis, provide the following information in the specified output format:
+**Output Logic:**
 
-1.  **riskLevel**: 'safe' if public domain, CC0, or a new original creation. 'attribution' if free to use but requires credit. 'copyrighted' if protected.
-2.  **copyrightStatus**: A clear summary (e.g., "Protected by Copyright", "Public Domain", "Original Creation").
-3.  **license**: The specific license name (e.g., "CC0 1.0", "Getty Images Royalty-Free", "All Rights Reserved by Creator").
-4.  **owner**: The copyright owner. For original creations, use "User / Creator".
-5.  **copyrightedElements**: List specific copyrighted elements. Omit if none.
-6.  **moderationInfo**: Provide context for nature photos or AI art. Otherwise, omit.
-7.  **detectedOn**: A list of verified, live websites where you found this image. **Verify each link.** Omit if no matches are found.
+*   **If Recognizable IP is Found (like Daenerys Targaryen):**
+    *   This is your highest priority. The image is a derivative work and is subject to the original IP holder's copyright.
+    *   Set riskLevel to 'copyrighted'.
+    *   Set copyrightStatus to "Contains Copyrighted Elements".
+    *   Set owner to the owner of the original IP (e.g., "HBO/Warner Bros. for Game of Thrones").
+    *   Set license to "Varies by Element" or the specific license if known.
+    *   Set copyrightedElements to a list of the specific elements found (e.g., ["Daenerys Targaryen character", "Game of Thrones dragon design"]).
+    *   Set moderationInfo to explain the nuance. Example: "This AI-generated image is a derivative work based on protected intellectual property (Game of Thrones). While you created this specific image, the underlying characters and designs are copyrighted by their respective owners, severely restricting commercial use."
+
+*   **If NO Recognizable IP is Found, AND the image IS found online:**
+    *   Determine the license from the source websites.
+    *   Set detectedOn to a list of verified, live websites where you found this image. **Verify each link.** Omit if no matches are found.
+    *   Set riskLevel, copyrightStatus, owner, and license based on the source (e.g., for Pexels, set riskLevel to 'safe', set copyrightStatus to 'Public Domain (CC0)').
+
+*   **If NO Recognizable IP is Found, AND the image is NOT found online (Original Creation):**
+    *   This is likely an original photograph or a unique AI creation.
+    *   Set riskLevel to 'safe'.
+    *   Set copyrightStatus to "Original Creation".
+    *   Set owner to "User / Creator".
+    *   Set license to "All Rights Reserved by Creator".
+    *   Set moderationInfo. If it appears to be a photo of a natural subject (e.g., a lion), explain the nuance: "While a lion is a part of nature and cannot be copyrighted, this specific photograph is a creative work and is likely protected by the photographer's copyright." If it is generic AI art, the moderation info about checking the tool's ToS is appropriate.
 
 Image to analyze: {{media url=imageDataUri}}`,
   }
@@ -109,5 +116,3 @@ const analyzeImageCopyrightFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
