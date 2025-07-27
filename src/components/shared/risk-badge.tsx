@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { ShieldCheck, ShieldAlert, ShieldX } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, ShieldX, HelpCircle } from 'lucide-react';
 
 interface RiskBadgeProps {
   riskLevel: 'safe' | 'attribution' | 'copyrighted';
@@ -22,10 +22,15 @@ const riskConfig = {
     label: 'Copyrighted',
     className: 'bg-red-500/10 text-red-400 border-red-500/20',
   },
+  unknown: {
+    icon: HelpCircle,
+    label: 'Unknown',
+    className: 'bg-muted text-muted-foreground border-border',
+  }
 };
 
 export default function RiskBadge({ riskLevel, className }: RiskBadgeProps) {
-  const config = riskConfig[riskLevel];
+  const config = riskConfig[riskLevel] || riskConfig.unknown;
   const Icon = config.icon;
 
   return (
