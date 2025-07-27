@@ -83,10 +83,10 @@ export default function ScanResult({ data }: ScanResultProps) {
     };
 
     try {
-      if (navigator.share) {
+      if (navigator.share && navigator.canShare(shareData)) {
         await navigator.share(shareData);
       } else {
-        throw new Error("Web Share API not supported.");
+        throw new Error("Web Share API not supported or data cannot be shared.");
       }
     } catch (error) {
        if ((error as Error).name !== 'AbortError') {
