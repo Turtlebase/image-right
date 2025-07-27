@@ -22,7 +22,7 @@ interface ScanResultProps {
   data: ScanResultData;
 }
 
-export default function ScanResult({ data }: ScanResultProps) {
+export default function ScanResult({ data }: ScanResultProps): React.JSX.Element {
   const { toast } = useToast();
   const { resolvedTheme } = useTheme();
   const reportRef = useRef<HTMLDivElement>(null);
@@ -100,37 +100,37 @@ export default function ScanResult({ data }: ScanResultProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       <div ref={reportRef} className="space-y-6 bg-background p-4 rounded-lg">
         <Card className="overflow-hidden shadow-lg">
           {data.imageUrl && data.imageUrl.startsWith('data:image') ? (
-              <div className="relative h-64 w-full">
-                  <Image src={data.imageUrl} alt="Scanned image" layout="fill" objectFit="contain" data-ai-hint="scanned image result"/>
-              </div>
+            <div className="relative h-64 w-full">
+              <Image src={data.imageUrl} alt="Scanned image" layout="fill" objectFit="contain" data-ai-hint="scanned image result" />
+            </div>
           ) : (
-              <div className="h-48 w-full bg-muted flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
-                  <FileQuestion className="h-16 w-16" />
-                  <p className="mt-2 text-sm font-medium">Image not available in report</p>
-                  <p className="text-xs mt-1">To save storage, full images are not saved in scan history.</p>
-              </div>
+            <div className="h-48 w-full bg-muted flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
+              <FileQuestion className="h-16 w-16" />
+              <p className="mt-2 text-sm font-medium">Image not available in report</p>
+              <p className="text-xs mt-1">To save storage, full images are not saved in scan history.</p>
+            </div>
           )}
           <CardContent className="p-4">
             <RiskBadge riskLevel={data.riskLevel} />
             <p className="text-lg font-semibold mt-2">{data.copyrightStatus}</p>
           </CardContent>
         </Card>
-        
+
         {data.moderationInfo && (
           <Card className="bg-accent/20 border-accent/30">
-              <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-lg text-accent-foreground">
-                      <Info className="h-5 w-5" />
-                      Moderation Info
-                  </CardTitle>
-              </CardHeader>
-              <CardContent>
-                  <p className="text-sm text-accent-foreground/90">{data.moderationInfo}</p>
-              </CardContent>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg text-accent-foreground">
+                <Info className="h-5 w-5" />
+                Moderation Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-accent-foreground/90">{data.moderationInfo}</p>
+            </CardContent>
           </Card>
         )}
 
@@ -157,7 +157,7 @@ export default function ScanResult({ data }: ScanResultProps) {
             </div>
           </CardContent>
         </Card>
-        
+
         {data.copyrightedElements && data.copyrightedElements.length > 0 && (
           <Card>
             <CardHeader>
@@ -179,30 +179,29 @@ export default function ScanResult({ data }: ScanResultProps) {
         )}
 
         {data.detectedOn && data.detectedOn.length > 0 && (
-            <div className="space-y-2">
-               <h3 className="text-lg font-semibold px-1">Detected On</h3>
-               <div className="flex flex-wrap gap-2">
-                  {data.detectedOn.map((site, index) => (
-                     <a key={index} href={site.url} target="_blank" rel="noopener noreferrer" className="block">
-                       <div className="bg-muted px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors">
-                           {site.domain}
-                       </div>
-                     </a>
-                  ))}
-              </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold px-1">Detected On</h3>
+            <div className="flex flex-wrap gap-2">
+              {data.detectedOn.map((site, index) => (
+                <a key={index} href={site.url} target="_blank" rel="noopener noreferrer" className="block">
+                  <div className="bg-muted px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors">
+                    {site.domain}
+                  </div>
+                </a>
+              ))}
             </div>
+          </div>
         )}
       </div>
-      
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 mt-6">
           <Button variant="outline" className="h-12 text-base" onClick={handleDownloadPdf} disabled={isDownloading}>
-            {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <Download className="mr-2 h-5 w-5"/>}
+            {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
             {isDownloading ? 'Saving...' : 'PDF'}
           </Button>
           <Button className="h-12 text-base" onClick={handleShare} disabled={!canShare}>
-            <Share2 className="mr-2 h-5 w-5"/> Share
+            <Share2 className="mr-2 h-5 w-5" /> Share
           </Button>
       </div>
-    </div>
+    </>
   );
 }
