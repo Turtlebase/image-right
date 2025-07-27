@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import RiskBadge from '@/components/shared/risk-badge';
 import AiAdvice from './ai-advice';
-import { Calendar, Globe, Download, Share2, Search, Link as LinkIcon, User } from 'lucide-react';
+import { Calendar, Globe, Download, Share2, Search, Link as LinkIcon, User, Info } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
@@ -31,6 +31,20 @@ export default function ScanResult({ data }: ScanResultProps) {
         </CardContent>
       </Card>
       
+      {data.moderationInfo && (
+        <Card className="bg-blue-500/10 border-blue-500/20">
+            <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg text-blue-400">
+                    <Info className="h-5 w-5" />
+                    Moderation Info
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-foreground/90">{data.moderationInfo}</p>
+            </CardContent>
+        </Card>
+      )}
+
       <AiAdvice {...data} />
 
       <Card>
