@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Scan, FileText, Compass, Menu as MenuIcon, ShieldCheck } from 'lucide-react';
+import { Home, Scan, FileText, Compass, Menu as MenuIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MenuSheet } from './menu-sheet';
 
@@ -21,14 +21,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex flex-col h-screen w-full max-w-md mx-auto bg-background">
-      <header className="fixed top-0 left-0 right-0 max-w-md mx-auto h-16 bg-background/80 backdrop-blur-lg border-b border-border z-10 flex items-center px-4">
-        <div className="flex items-center gap-2">
-            <ShieldCheck className="h-7 w-7 text-primary" />
-            <h1 className="text-xl font-bold text-foreground tracking-tight">ImageRights AI</h1>
-        </div>
-      </header>
-      
-      <main className="flex-1 overflow-y-auto pt-16 pb-20">{children}</main>
+      <main className="flex-1 overflow-y-auto pt-4 pb-20">{children}</main>
 
       <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-20 px-4 pb-4">
         <div className="bg-background/80 backdrop-blur-lg border border-border rounded-2xl flex items-center justify-around h-full shadow-lg">
