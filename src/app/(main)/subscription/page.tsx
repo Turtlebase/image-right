@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSubscription, type SubscriptionPlan } from '@/hooks/useSubscription.tsx';
+import { useSubscription, type SubscriptionPlan } from '@/hooks/useSubscription';
 import { useTelegram } from '@/components/telegram-provider';
 import { CheckCircle, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -112,11 +112,7 @@ export default function SubscriptionPage() {
     
     const handleSelectPlan = (plan: SubscriptionPlan) => {
         if (plan === 'Premium') {
-            // handleUpgrade(); // Temporarily disabled
-            toast({
-                title: 'Coming Soon!',
-                description: 'Premium subscriptions will be available after our store review is complete.',
-            });
+            handleUpgrade();
         } else {
             // Logic for downgrading
             setPlan(plan);
@@ -156,11 +152,10 @@ export default function SubscriptionPage() {
                         <CardFooter>
                             {subscription.plan === plan.name ? (
                                 <Button disabled className="w-full">Current Plan</Button>
-                            ) : plan.name === 'Premium' ? (
-                                <Button disabled className="w-full">Coming Soon</Button>
                             ) : (
-                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full">
-                                    Downgrade to Free
+                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full" disabled={isLoading}>
+                                    {isLoading && plan.name === 'Premium' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {plan.name === 'Free' ? 'Downgrade to Free' : 'Upgrade to Premium'}
                                 </Button>
                             )}
                         </CardFooter>

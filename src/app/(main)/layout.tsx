@@ -1,6 +1,6 @@
 
 import { MobileLayout } from '@/components/layout/mobile-layout';
-import { SubscriptionProvider } from '@/hooks/useSubscription.tsx';
+import { SubscriptionProvider } from '@/hooks/useSubscription';
 
 export default function MainLayout({
   children,

@@ -9,7 +9,7 @@ import { Loader2, ArrowLeft, ShieldAlert, Tv } from 'lucide-react';
 import { analyzeImageCopyright } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
 import { addScanToHistory } from '@/lib/history';
-import { useSubscription } from '@/hooks/useSubscription.tsx';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useTelegram } from '@/components/telegram-provider';

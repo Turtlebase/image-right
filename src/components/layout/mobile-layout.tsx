@@ -44,7 +44,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
             }).catch((err: any) => console.error("In-app ad error:", err));
         }
     }
-  }, [subscription.plan]);
+  }, [subscription.plan, pathname]);
 
   return (
     <div className="flex flex-col h-screen w-full max-w-md mx-auto bg-background">

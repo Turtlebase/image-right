@@ -1,9 +1,11 @@
+
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 import { TelegramProvider } from '@/components/telegram-provider';
 import Script from 'next/script';
+import AppLogo from '@/components/shared/logo';
 
 export const metadata: Metadata = {
   title: {

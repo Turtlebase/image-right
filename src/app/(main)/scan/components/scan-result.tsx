@@ -13,16 +13,9 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from 'next-themes';
-import { useSubscription } from '@/hooks/useSubscription.tsx';
+import { useSubscription } from '@/hooks/useSubscription';
 import Link from 'next/link';
 import { useTelegram } from '@/components/telegram-provider';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
   imageUrl: string; // Can be a full data URI or a thumbnail data URI
