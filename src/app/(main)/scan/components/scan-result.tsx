@@ -89,12 +89,12 @@ export default function ScanResult({ data }: ScanResultProps) {
         throw new Error("Web Share API not supported.");
       }
     } catch (error) {
-      if ((error as Error).name !== 'AbortError' && (error as Error).name !== 'NotAllowedError') {
+       if ((error as Error).name !== 'AbortError') {
         toast({
           variant: "destructive",
           title: "Sharing Failed",
           description: "Could not share the report at this time.",
-        })
+        });
       }
     }
   };
