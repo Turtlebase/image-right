@@ -30,12 +30,14 @@ export default function ScanResult({ data }: ScanResultProps) {
   useEffect(() => {
     // The Web Share API is only available in secure contexts (HTTPS) and on certain browsers.
     // We check for its existence and whether it can share our data before enabling the button.
-    const shareData = {
-      title: 'ImageRights AI Scan Report',
-      text: `Here's my image copyright report:\n- Status: ${data.copyrightStatus}\n- Risk Level: ${data.riskLevel}\n- License: ${data.license}`,
-    };
-    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-      setCanShare(true);
+    if (typeof navigator.share !== 'undefined' && typeof navigator.canShare !== 'undefined') {
+        const shareData = {
+          title: 'ImageRights AI Scan Report',
+          text: `Here's my image copyright report:\n- Status: ${data.copyrightStatus}\n- Risk Level: ${data.riskLevel}\n- License: ${data.license}`,
+        };
+        if (navigator.canShare(shareData)) {
+          setCanShare(true);
+        }
     }
   }, [data]);
 
@@ -110,7 +112,7 @@ export default function ScanResult({ data }: ScanResultProps) {
     <div className="space-y-6">
       <div ref={reportRef} className="space-y-6 bg-[#222222] p-4 rounded-lg">
         <Card className="overflow-hidden shadow-lg">
-          {data.imageUrl ? (
+          {data.imageUrl && data.imageUrl.startsWith('data:image') ? (
               <div className="relative h-64 w-full">
                   <Image src={data.imageUrl} alt="Scanned image" layout="fill" objectFit="contain" data-ai-hint="scanned image result"/>
               </div>
