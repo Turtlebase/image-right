@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import RiskBadge from '@/components/shared/risk-badge';
 import AiAdvice from './ai-advice';
-import { User, Globe, Download, Share2, Info } from 'lucide-react';
+import { User, Globe, Download, Share2, Info, FileQuestion } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
-  imageUrl: string;
+  imageUrl?: string; // Make imageUrl optional
 };
 
 interface ScanResultProps {
@@ -22,9 +22,17 @@ export default function ScanResult({ data }: ScanResultProps) {
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden shadow-lg">
-        <div className="relative h-64 w-full">
-          <Image src={data.imageUrl} alt="Scanned image" layout="fill" objectFit="cover" data-ai-hint="scanned image result"/>
-        </div>
+        {data.imageUrl && (
+            <div className="relative h-64 w-full">
+                <Image src={data.imageUrl} alt="Scanned image" layout="fill" objectFit="cover" data-ai-hint="scanned image result"/>
+            </div>
+        )}
+        {!data.imageUrl && (
+            <div className="h-48 w-full bg-muted flex flex-col items-center justify-center text-muted-foreground">
+                <FileQuestion className="h-16 w-16" />
+                <p className="mt-2 text-sm font-medium">Image not available in report</p>
+            </div>
+        )}
         <CardContent className="p-4">
           <RiskBadge riskLevel={data.riskLevel} />
           <p className="text-lg font-semibold mt-2">{data.copyrightStatus}</p>

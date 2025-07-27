@@ -46,17 +46,14 @@ export default function ReportsPage() {
             <Link href={`/reports/${report.id}`} key={report.id} className="block group">
               <Card className="overflow-hidden transition-all duration-300 group-hover:border-primary group-hover:scale-[1.02] active:scale-100 shadow-md hover:shadow-primary/20">
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className="relative h-20 w-20 flex-shrink-0">
-                    <Image
-                      src={report.result.imageUrl}
-                      alt={`Report ${report.id}`}
-                      fill
-                      className="rounded-lg object-cover"
-                    />
+                  <div className="relative h-20 w-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
+                    {/* Since imageUrl is not stored, we show a placeholder or generic icon */}
+                     <FileSearch className="h-10 w-10 text-primary/50"/>
                   </div>
                   <div className="flex-grow">
                     <RiskBadge riskLevel={report.result.riskLevel as any} />
                     <p className="text-sm text-muted-foreground mt-2">Scanned on: {new Date(report.date).toLocaleDateString()}</p>
+                    <p className="text-sm font-medium text-foreground truncate mt-1">{report.result.copyrightStatus}</p>
                   </div>
                 </CardContent>
               </Card>

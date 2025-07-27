@@ -4,10 +4,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getReportById, type ScanHistoryItem } from '@/lib/history';
-import ScanResult from '@/app/(main)/scan/components/scan-result';
+import ScanResult, { type ScanResultData } from '@/app/(main)/scan/components/scan-result';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function ReportDetailPage() {
   const params = useParams();
@@ -34,6 +35,15 @@ export default function ReportDetailPage() {
     );
   }
 
+  // Since we are no longer storing the image URL in history,
+  // we can create a placeholder or use a default image if needed.
+  // For now, let's just use the data without the image.
+  // The ScanResult component is designed to handle a missing imageUrl.
+  const resultData: ScanResultData = {
+    ...report.result
+  };
+
+
   return (
     <div className="p-4 animate-in fade-in-50 duration-500">
       <Button variant="ghost" asChild className="mb-4">
@@ -42,7 +52,8 @@ export default function ReportDetailPage() {
           Back to Reports
         </Link>
       </Button>
-      <ScanResult data={report.result} />
+      {/* We pass the data without the image URL */}
+      <ScanResult data={resultData} />
     </div>
   );
 }
