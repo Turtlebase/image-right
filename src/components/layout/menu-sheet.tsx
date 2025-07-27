@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Moon, Lock, FileText, MessageSquare, Info, LogIn } from 'lucide-react';
+import { Moon, Lock, FileText, MessageSquare, Info } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 interface MenuSheetProps {
   isOpen: boolean;
@@ -13,11 +16,16 @@ interface MenuSheetProps {
 }
 
 export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
-  // In this dark-by-default app, this toggle is for demonstration.
-  // A full implementation would require a theme provider.
-  const toggleTheme = () => {
-    document.documentElement.classList.toggle('dark');
-  };
+    const { theme, setTheme } = useTheme();
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) {
+        return null;
+    }
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -32,37 +40,31 @@ export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
                 <Moon className="w-5 h-5 text-muted-foreground" />
                 <Label htmlFor="dark-mode" className="text-base">Dark Mode</Label>
               </div>
-              <Switch id="dark-mode" defaultChecked onClick={toggleTheme} />
-            </li>
-            <li>
-              <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base">
-                <LogIn className="w-5 h-5 text-muted-foreground" />
-                Login with Telegram
-              </Button>
+              <Switch 
+                id="dark-mode" 
+                checked={theme === 'dark'}
+                onCheckedChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              />
             </li>
             <Separator className="my-2" />
             <li>
-              <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base">
-                <Lock className="w-5 h-5 text-muted-foreground" />
-                Privacy Policy
+              <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
+                <Link href="/privacy"><Lock className="w-5 h-5 text-muted-foreground" /> Privacy Policy</Link>
               </Button>
             </li>
             <li>
-              <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base">
-                <FileText className="w-5 h-5 text-muted-foreground" />
-                Terms of Use
+              <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
+                <Link href="/terms"><FileText className="w-5 h-5 text-muted-foreground" /> Terms of Use</Link>
               </Button>
             </li>
             <li>
-              <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base">
-                <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                Contact Us
+               <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
+                <Link href="/contact"><MessageSquare className="w-5 h-5 text-muted-foreground" /> Contact Us</Link>
               </Button>
             </li>
             <li>
-              <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base">
-                <Info className="w-5 h-5 text-muted-foreground" />
-                About App
+               <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
+                <Link href="/about"><Info className="w-5 h-5 text-muted-foreground" /> About App</Link>
               </Button>
             </li>
           </ul>
