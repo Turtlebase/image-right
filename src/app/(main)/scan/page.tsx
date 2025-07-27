@@ -42,10 +42,12 @@ export default function ScanPage() {
   const handleScan = async () => {
     if (!imagePreview) return;
     setIsScanning(true);
+    setScanResult(null); // Clear previous results
     try {
       const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
-      const fullResult = { ...result, imageUrl: imagePreview };
+      const fullResult: ScanResultData = { ...result, imageUrl: imagePreview };
       setScanResult(fullResult);
+      // Now we save the result to history (without the image data)
       addScanToHistory(fullResult);
     } catch (error) {
       console.error('Failed to scan image:', error);
@@ -67,6 +69,7 @@ export default function ScanPage() {
   };
 
   useEffect(() => {
+    // This effect allows pasting images directly
     const pasteHandler = (event: ClipboardEvent) => handlePaste(event as unknown as React.ClipboardEvent);
     window.addEventListener('paste', pasteHandler);
     return () => {
@@ -100,7 +103,7 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="flex flex-col h-full p-4">
+    <div className="flex flex-col h-full p-4" onPaste={handlePaste}>
       <div className="text-center my-8">
         <h1 className="text-3xl font-bold font-headline">Scan Image</h1>
         <p className="text-muted-foreground mt-2">Upload an image to check its copyright status.</p>

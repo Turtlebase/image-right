@@ -6,11 +6,15 @@ import { type ScanResultData } from "@/app/(main)/scan/components/scan-result";
 
 const HISTORY_KEY = 'image-rights-ai-history';
 
-// Note: We are reverting to a simplified interface that does not include all Firebase fields.
-export interface ScanHistoryItem extends AnalyzeImageCopyrightOutput {
+// The ScanHistoryItem will not include the full imageUrl to avoid storage quota issues.
+export interface ScanHistoryItem extends Omit<AnalyzeImageCopyrightOutput, 'imageUrl'> {
   id: string;
   date: string;
-  imageUrl: string; 
+  // We add a smaller thumbnail or a reference, but not the full data URI.
+  // For simplicity now, we will omit it entirely from storage.
+  imageUrl?: string; // This will be undefined when retrieved from history.
+  riskLevel: 'safe' | 'attribution' | 'copyrighted';
+  copyrightStatus: string;
 }
 
 
@@ -28,30 +32,30 @@ export function getScanHistory(): ScanHistoryItem[] {
 }
 
 export function addScanToHistory(resultData: ScanResultData): void {
-  console.log("Saving to history is currently disabled to prevent storage issues.");
-  // This function is disabled to prevent storage quota errors.
-  // A backend solution like Firebase or another service is needed to properly store
-  // image data without exceeding browser limits.
-  
-  // The code below is what causes the storage quota error.
-  /*
-  if (typeof window === 'undefined' || !resultData.imageUrl) {
+  if (typeof window === 'undefined') {
     return;
   }
-  const history = getScanHistory();
-  const newItem: ScanHistoryItem = {
-    ...resultData,
-    id: new Date().toISOString(),
-    date: new Date().toISOString(),
-  };
-  const newHistory = [newItem, ...history].slice(0, 50); // Keep latest 50
   try {
+    const history = getScanHistory();
+    
+    // Create a new item for history, EXCLUDING the large imageUrl data URI
+    const { imageUrl, ...restOfResult } = resultData;
+
+    const newItem: ScanHistoryItem = {
+      ...restOfResult,
+      id: new Date().toISOString(),
+      date: new Date().toISOString(),
+    };
+    
+    // Add the new item and keep the history to a reasonable size (e.g., 50 items)
+    const newHistory = [newItem, ...history].slice(0, 50);
+    
     localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+
   } catch (error) {
     console.error("Failed to save scan to history:", error);
-    // This is where the quota exceeded error typically happens.
+    // This indicates a problem, which could still be a quota issue if other apps are storing a lot of data.
   }
-  */
 }
 
 

@@ -26,7 +26,8 @@ function ReportDetailContent() {
         router.push('/reports');
       }
     } else {
-      router.push('/reports');
+        // If no report data, redirect back to the main reports page.
+        router.push('/reports');
     }
   }, [searchParams, router]);
 
@@ -41,8 +42,11 @@ function ReportDetailContent() {
     );
   }
   
+  // Adapt the history item to the format expected by ScanResult.
+  // The imageUrl will be missing, and ScanResult is designed to handle this.
   const resultData: ScanResultData = {
-    ...report
+    ...report,
+    imageUrl: report.imageUrl || '', // Pass an empty string if imageUrl is not available
   };
 
 
@@ -60,7 +64,7 @@ function ReportDetailContent() {
 
 export default function ReportDetailPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex items-center justify-center h-full">Loading report...</div>}>
             <ReportDetailContent />
         </Suspense>
     )

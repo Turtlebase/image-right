@@ -16,6 +16,7 @@ export default function ReportsPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // History is loaded only on the client-side
     async function fetchHistory() {
       try {
         const history = await getScanHistory();
@@ -30,8 +31,7 @@ export default function ReportsPage() {
   }, []);
 
   const handleReportClick = (report: ScanHistoryItem) => {
-    // Pass the full report object via query params (or use a state management library)
-    // Using query params is simpler for this case.
+    // Pass the full report object via query params
     const reportJson = encodeURIComponent(JSON.stringify(report));
     router.push(`/reports/detail?report=${reportJson}`);
   };
@@ -57,7 +57,7 @@ export default function ReportsPage() {
         <div className="text-center text-muted-foreground py-20 flex flex-col items-center">
             <FileSearch className="h-16 w-16 mb-4 text-primary/50"/>
             <h3 className="text-xl font-semibold text-foreground">No Reports Yet</h3>
-            <p className="mt-2 max-w-xs">Your past scan results will appear here after you scan an image. Saving reports is currently disabled.</p>
+            <p className="mt-2 max-w-xs">Your past scan results will appear here after you scan an image.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -66,11 +66,8 @@ export default function ReportsPage() {
               <Card className="overflow-hidden transition-all duration-300 group-hover:border-primary group-hover:scale-[1.02] active:scale-100 shadow-md hover:shadow-primary/20">
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="relative h-20 w-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-                    {report.imageUrl ? (
-                       <Image src={report.imageUrl} alt="Scanned image thumbnail" layout="fill" objectFit="cover" />
-                    ): (
-                       <FileSearch className="h-10 w-10 text-primary/50"/>
-                    )}
+                    {/* Since we don't store the image, we show a placeholder */}
+                    <FileSearch className="h-10 w-10 text-primary/50"/>
                   </div>
                   <div className="flex-grow overflow-hidden">
                     <RiskBadge riskLevel={report.riskLevel as any} />

@@ -8,10 +8,9 @@ import RiskBadge from '@/components/shared/risk-badge';
 import AiAdvice from './ai-advice';
 import { User, Globe, Download, Share2, Info, FileQuestion } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
-import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
-  imageUrl: string; // imageUrl is no longer optional
+  imageUrl: string; // Can be an empty string for historical reports
 };
 
 interface ScanResultProps {
@@ -22,15 +21,15 @@ export default function ScanResult({ data }: ScanResultProps) {
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden shadow-lg">
-        {data.imageUrl && (
+        {data.imageUrl ? (
             <div className="relative h-64 w-full">
                 <Image src={data.imageUrl} alt="Scanned image" layout="fill" objectFit="cover" data-ai-hint="scanned image result"/>
             </div>
-        )}
-        {!data.imageUrl && (
-            <div className="h-48 w-full bg-muted flex flex-col items-center justify-center text-muted-foreground">
+        ) : (
+            <div className="h-48 w-full bg-muted flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
                 <FileQuestion className="h-16 w-16" />
                 <p className="mt-2 text-sm font-medium">Image not available in report</p>
+                <p className="text-xs mt-1">To save storage, images are not saved in scan history.</p>
             </div>
         )}
         <CardContent className="p-4">
@@ -100,22 +99,15 @@ export default function ScanResult({ data }: ScanResultProps) {
       {data.detectedOn && data.detectedOn.length > 0 && (
           <div className="space-y-2">
              <h3 className="text-lg font-semibold px-1">Detected On</h3>
-             <Carousel opts={{
-                align: "start",
-                dragFree: true,
-             }}>
-                <CarouselContent className="-ml-2">
-                    {data.detectedOn.map((site, index) => (
-                        <CarouselItem key={index} className="pl-2 basis-auto">
-                           <a href={site.url} target="_blank" rel="noopener noreferrer">
-                             <div className="bg-muted px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors">
-                                 {site.domain}
-                             </div>
-                           </a>
-                        </CarouselItem>
-                    ))}
-                </CarouselContent>
-            </Carousel>
+             <div className="flex flex-wrap gap-2">
+                {data.detectedOn.map((site, index) => (
+                   <a key={index} href={site.url} target="_blank" rel="noopener noreferrer" className="block">
+                     <div className="bg-muted px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors">
+                         {site.domain}
+                     </div>
+                   </a>
+                ))}
+            </div>
           </div>
       )}
       
