@@ -44,6 +44,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         <Script async src="https://jsc.adskeeper.com/t/e/tele.min.js" strategy="lazyOnload"></Script>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </head>
       <body className="font-body antialiased min-h-screen bg-background">
         <ThemeProvider

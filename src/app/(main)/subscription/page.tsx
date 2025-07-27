@@ -4,8 +4,14 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSubscription, type SubscriptionPlan } from '@/hooks/useSubscription.tsx';
+import { useTelegram } from '@/components/telegram-provider';
 import { CheckCircle, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+
+declare const Razorpay: any;
 
 const plans = {
     Free: {
@@ -21,7 +27,7 @@ const plans = {
     },
     Premium: {
         name: 'Premium',
-        price: '$9.99/mo',
+        price: '₹99/mo', // Updated price for Indian audience
         features: [
             'Unlimited image checks',
             'Advanced, detailed results',
@@ -34,13 +40,88 @@ const plans = {
 
 export default function SubscriptionPage() {
     const { subscription, setPlan } = useSubscription();
+    const { user } = useTelegram();
+    const { toast } = useToast();
     const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
 
+    const handleUpgrade = () => {
+        setIsLoading(true);
+
+        const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+        const planId = process.env.NEXT_PUBLIC_RAZORPAY_PLAN_ID;
+
+        if (!keyId || !planId) {
+            toast({
+                variant: 'destructive',
+                title: 'Configuration Error',
+                description: 'Payment gateway is not configured correctly. Please contact support.',
+            });
+            setIsLoading(false);
+            return;
+        }
+
+        const options = {
+            key: keyId,
+            subscription_id: planId, // For subscription-based checkout
+            name: "ImageRights AI Premium",
+            description: "Monthly Subscription",
+            handler: function (response: any) {
+                // This function is called on successful payment.
+                // In a real app, you would send response.razorpay_payment_id
+                // to your backend for verification and activation.
+                // For now, we simulate the upgrade on the client-side.
+                toast({
+                    title: 'Subscription Successful!',
+                    description: 'Welcome to Premium!',
+                });
+                setPlan('Premium');
+                router.push('/');
+            },
+            prefill: {
+                name: user ? `${user.first_name} ${user.last_name || ''}`.trim() : '',
+                // email: user.email, // If you have user's email
+                // contact: user.phone_number, // If you have user's phone
+            },
+            notes: {
+                telegram_user_id: user?.id,
+            },
+            theme: {
+                color: "#29ABE2" // Vibrant blue from your style guide
+            },
+            modal: {
+                ondismiss: function() {
+                    setIsLoading(false);
+                }
+            }
+        };
+        
+        try {
+            const rzp = new Razorpay(options);
+            rzp.open();
+        } catch (error) {
+            console.error("Razorpay error:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Payment Error',
+                description: 'Could not initialize the payment gateway. Please try again.',
+            });
+            setIsLoading(false);
+        }
+    }
+    
     const handleSelectPlan = (plan: SubscriptionPlan) => {
-        setPlan(plan);
-        // In a real app, this would redirect to a payment flow.
-        // For now, we just upgrade and go back to the home page.
-        router.push('/');
+        if (plan === 'Premium') {
+            handleUpgrade();
+        } else {
+            // Logic for downgrading
+            setPlan(plan);
+            toast({
+                title: 'Plan Changed',
+                description: 'You have been downgraded to the Free plan.',
+            });
+            router.push('/');
+        }
     }
 
     return (
@@ -72,7 +153,8 @@ export default function SubscriptionPage() {
                             {subscription.plan === plan.name ? (
                                 <Button disabled className="w-full">Current Plan</Button>
                             ) : (
-                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full">
+                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full" disabled={isLoading && plan.name === 'Premium'}>
+                                    {isLoading && plan.name === 'Premium' && <Loader2 className="animate-spin mr-2"/>}
                                     {plan.name === 'Free' ? 'Downgrade to Free' : 'Upgrade to Premium'}
                                 </Button>
                             )}
@@ -80,6 +162,7 @@ export default function SubscriptionPage() {
                     </Card>
                 ))}
             </div>
+            <p className="text-center text-xs text-muted-foreground mt-4">Payments are securely processed by Razorpay.</p>
         </div>
     );
 }
