@@ -79,6 +79,7 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
     const shareData = {
       title: 'ImageRights AI Scan Report',
       text: getShareText(),
+      url: window.location.href,
     };
 
     if (navigator.share) {
@@ -86,6 +87,7 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
         await navigator.share(shareData);
       } catch (error) {
          if ((error as Error).name !== 'AbortError') {
+          console.error("Share failed:", error);
           toast({
             variant: "destructive",
             title: "Sharing Failed",
