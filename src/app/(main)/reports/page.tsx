@@ -57,7 +57,7 @@ export default function ReportsPage() {
         <div className="text-center text-muted-foreground py-20 flex flex-col items-center">
             <FileSearch className="h-16 w-16 mb-4 text-primary/50"/>
             <h3 className="text-xl font-semibold text-foreground">No Reports Yet</h3>
-            <p className="mt-2 max-w-xs">Your past scan results will appear here after you scan an image.</p>
+            <p className="mt-2 max-w-xs">Your past scan results will appear here after you scan an image. Saving reports is currently disabled.</p>
         </div>
       ) : (
         <div className="space-y-4">
