@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import RiskBadge from '@/components/shared/risk-badge';
 import { getScanHistory, type ScanHistoryItem } from '@/lib/history';
-import { FileSearch, Loader2 } from 'lucide-react';
+import { FileSearch, Loader2, ImageOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ReportsPage() {
@@ -65,13 +65,17 @@ export default function ReportsPage() {
               <Card className="overflow-hidden transition-all duration-300 group-hover:border-primary group-hover:scale-[1.02] active:scale-100 shadow-md hover:shadow-primary/20">
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="relative h-20 w-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-                    <Image
-                      src={report.imageUrl}
-                      alt="Scanned image thumbnail"
-                      layout="fill"
-                      objectFit="cover"
-                      className="rounded-lg"
-                    />
+                    {report.imageUrl ? (
+                        <Image
+                            src={report.imageUrl}
+                            alt="Scanned image thumbnail"
+                            layout="fill"
+                            objectFit="cover"
+                            className="rounded-lg"
+                        />
+                    ) : (
+                        <ImageOff className="h-8 w-8 text-muted-foreground" />
+                    )}
                   </div>
                   <div className="flex-grow overflow-hidden">
                     <RiskBadge riskLevel={report.riskLevel} />
