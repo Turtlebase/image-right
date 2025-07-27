@@ -2,13 +2,29 @@
 "use client"
 
 import { useTheme } from 'next-themes';
-import React, { useEffect, createContext, useContext } from 'react';
+import React, { useEffect, createContext, useContext, useState } from 'react';
 
 // Define the type for the Telegram Web App object
 interface TelegramWebApp {
   ready: () => void;
   colorScheme: 'light' | 'dark';
+  initDataUnsafe: {
+    user?: TelegramUser;
+  };
   // Add other properties and methods you might use
+}
+
+interface TelegramUser {
+    id: number;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+    photo_url?: string;
+}
+
+interface TelegramContextType {
+    webApp: TelegramWebApp | null;
+    user: TelegramUser | null;
 }
 
 declare global {
@@ -19,11 +35,11 @@ declare global {
   }
 }
 
-const TelegramContext = createContext<TelegramWebApp | null>(null);
+const TelegramContext = createContext<TelegramContextType | null>(null);
 
 export const useTelegram = () => {
     const context = useContext(TelegramContext);
-    if (context === undefined) {
+    if (context === undefined || context === null) {
         throw new Error('useTelegram must be used within a TelegramProvider');
     }
     return context;
@@ -31,17 +47,25 @@ export const useTelegram = () => {
 
 export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
+  const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
+  const [user, setUser] = useState<TelegramUser | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
+      setWebApp(tg);
+      setUser(tg.initDataUnsafe.user || null);
       
       // Sync Telegram's color scheme with the app's theme
-      setTheme(tg.colorScheme);
+      if (tg.colorScheme) {
+          setTheme(tg.colorScheme);
+      }
       
       const handleThemeChange = () => {
-        setTheme(tg.colorScheme);
+        if (tg.colorScheme) {
+            setTheme(tg.colorScheme);
+        }
       };
 
       // @ts-ignore - a bit of a hack as the event type is not in the default declaration
@@ -56,7 +80,7 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   }, [setTheme]);
 
   return (
-    <TelegramContext.Provider value={typeof window !== 'undefined' && window.Telegram ? window.Telegram.WebApp : null}>
+    <TelegramContext.Provider value={{ webApp, user }}>
         {children}
     </TelegramContext.Provider>
   );

@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { Home, Scan, FileText, Compass, Menu as MenuIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MenuSheet } from './menu-sheet';
+import UserProfile from './user-profile';
+import { useTelegram } from '../telegram-provider';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -18,9 +20,15 @@ const navItems = [
 export function MobileLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const { user } = useTelegram();
 
   return (
     <div className="flex flex-col h-screen w-full max-w-md mx-auto bg-background">
+      <header className="flex items-center justify-between p-4 border-b border-border">
+          <h1 className="text-xl font-bold">ImageRights AI</h1>
+          {user && <UserProfile user={user} />}
+      </header>
+
       <main className="flex-1 overflow-y-auto pt-4 pb-20">{children}</main>
 
       <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-20 px-4 pb-4">
