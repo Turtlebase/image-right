@@ -11,6 +11,7 @@ import UserProfile from './user-profile';
 import { useTelegram } from '../telegram-provider';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Star } from 'lucide-react';
+import AppLogo from '../shared/logo';
 
 // This function will be defined globally by the Monetag script
 declare function show_9631988(options?: any): Promise<void>;
@@ -35,10 +36,10 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
             show_9631988({
                 type: 'inApp',
                 inAppSettings: {
-                    frequency: 2,
-                    capping: 0.1,
-                    interval: 30,
-                    timeout: 5,
+                    frequency: 1, // Show only 1 ad
+                    capping: 1, // within 1 hour
+                    interval: 60, // with a 60-second interval
+                    timeout: 10, // after a 10-second delay
                     everyPage: false
                 }
             }).catch((err: any) => console.error("In-app ad error:", err));
