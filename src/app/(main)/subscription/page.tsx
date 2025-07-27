@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSubscription, type SubscriptionPlan } from '@/hooks/use-subscription';
+import { useSubscription, type SubscriptionPlan } from '@/hooks/useSubscription';
 import { CheckCircle, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

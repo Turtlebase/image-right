@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { MenuSheet } from './menu-sheet';
 import UserProfile from './user-profile';
 import { useTelegram } from '../telegram-provider';
-import { useSubscription } from '@/hooks/use-subscription';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Star } from 'lucide-react';
 
 const navItems = [

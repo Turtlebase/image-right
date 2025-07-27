@@ -3,7 +3,7 @@
 
 import { type AnalyzeImageCopyrightOutput } from "@/ai/flows/analyze-image-copyright";
 import { type ScanResultData } from "@/app/(main)/scan/components/scan-result";
-import { type SubscriptionPlan } from '@/hooks/use-subscription';
+import { type SubscriptionPlan } from '@/hooks/useSubscription';
 
 const HISTORY_KEY = 'image-rights-ai-history';
 const THUMBNAIL_MAX_WIDTH = 128;

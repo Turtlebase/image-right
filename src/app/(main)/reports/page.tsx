@@ -9,7 +9,7 @@ import RiskBadge from '@/components/shared/risk-badge';
 import { getScanHistory, type ScanHistoryItem } from '@/lib/history';
 import { FileSearch, Loader2, ImageOff, Star, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useSubscription } from '@/hooks/use-subscription';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 
 export default function ReportsPage() {

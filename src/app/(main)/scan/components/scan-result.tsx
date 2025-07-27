@@ -13,7 +13,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from 'next-themes';
-import { useSubscription } from '@/hooks/use-subscription';
+import { useSubscription } from '@/hooks/useSubscription';
 import Link from 'next/link';
 import {
   AlertDialog,
