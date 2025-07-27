@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
@@ -25,14 +24,12 @@ interface ScanResultProps {
 
 export default function ScanResult({ data }: ScanResultProps) {
   const { toast } = useToast();
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [canShare, setCanShare] = useState(false);
 
   useEffect(() => {
-    // The Web Share API is only available in secure contexts (HTTPS) and on certain browsers.
-    // We check for its existence and whether it can share our data before enabling the button.
     if (typeof navigator.share !== 'undefined' && typeof navigator.canShare !== 'undefined') {
         const shareData = {
           title: 'ImageRights AI Scan Report',
@@ -50,27 +47,22 @@ export default function ScanResult({ data }: ScanResultProps) {
 
     setIsDownloading(true);
     try {
-      // Use html2canvas to render the component to a canvas
       const canvas = await html2canvas(reportElement, { 
         useCORS: true,
-        scale: 2, // Increase scale for better resolution
-        backgroundColor: theme === 'dark' ? '#222222' : '#ffffff',
+        scale: 2,
+        backgroundColor: resolvedTheme === 'dark' ? '#18181b' : '#ffffff',
       });
 
-      // Get image data from canvas
       const imgData = canvas.toDataURL('image/png');
       
-      // Create a new PDF document
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'px',
         format: [canvas.width, canvas.height]
       });
 
-      // Add the image to the PDF
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
       
-      // Download the PDF
       pdf.save(`ImageRights-AI-Report-${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error("Failed to generate PDF:", error);
@@ -88,7 +80,6 @@ export default function ScanResult({ data }: ScanResultProps) {
     const shareData = {
       title: 'ImageRights AI Scan Report',
       text: `Here's my image copyright report:\n- Status: ${data.copyrightStatus}\n- Risk Level: ${data.riskLevel}\n- License: ${data.license}`,
-      // url: window.location.href // If we had a public URL for reports, we'd use it here.
     };
 
     try {
@@ -98,9 +89,7 @@ export default function ScanResult({ data }: ScanResultProps) {
         throw new Error("Web Share API not supported.");
       }
     } catch (error) {
-      console.error('Failed to share:', error);
-      // Don't show a toast for permission denied, as it's a user action.
-      if ((error as Error).name !== 'AbortError') {
+      if ((error as Error).name !== 'AbortError' && (error as Error).name !== 'NotAllowedError') {
         toast({
           variant: "destructive",
           title: "Sharing Failed",
@@ -109,7 +98,6 @@ export default function ScanResult({ data }: ScanResultProps) {
       }
     }
   };
-
 
   return (
     <div className="space-y-6">
@@ -123,7 +111,7 @@ export default function ScanResult({ data }: ScanResultProps) {
               <div className="h-48 w-full bg-muted flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
                   <FileQuestion className="h-16 w-16" />
                   <p className="mt-2 text-sm font-medium">Image not available in report</p>
-                  <p className="text-xs mt-1">To save storage, images are not saved in scan history.</p>
+                  <p className="text-xs mt-1">To save storage, full images are not saved in scan history.</p>
               </div>
           )}
           <CardContent className="p-4">
@@ -133,7 +121,7 @@ export default function ScanResult({ data }: ScanResultProps) {
         </Card>
         
         {data.moderationInfo && (
-          <Card className="bg-accent/50 border-accent/20">
+          <Card className="bg-accent/20 border-accent/30">
               <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg text-accent-foreground">
                       <Info className="h-5 w-5" />

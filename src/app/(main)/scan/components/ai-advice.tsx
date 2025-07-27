@@ -35,7 +35,7 @@ export default function AiAdvice(props: ScanResultData) {
   }, [props]);
 
   return (
-    <Card className="bg-accent/50 border-accent/20">
+    <Card className="bg-accent/20 border-accent/30">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg text-accent-foreground">
           <Lightbulb className="h-5 w-5 text-accent-foreground" />
