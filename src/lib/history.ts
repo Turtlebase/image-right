@@ -5,16 +5,62 @@ import { type AnalyzeImageCopyrightOutput } from "@/ai/flows/analyze-image-copyr
 import { type ScanResultData } from "@/app/(main)/scan/components/scan-result";
 
 const HISTORY_KEY = 'image-rights-ai-history';
+const THUMBNAIL_MAX_WIDTH = 128;
+const THUMBNAIL_MAX_HEIGHT = 128;
 
-// The ScanHistoryItem will not include the full imageUrl to avoid storage quota issues.
+// The ScanHistoryItem will now include a smaller imageUrl (thumbnail) to avoid storage quota issues.
 export interface ScanHistoryItem extends Omit<AnalyzeImageCopyrightOutput, 'imageUrl'> {
   id: string;
   date: string;
-  // We add a smaller thumbnail or a reference, but not the full data URI.
-  // For simplicity now, we will omit it entirely from storage.
-  imageUrl?: string; // This will be undefined when retrieved from history.
+  imageUrl: string; // This will be a compressed base64 thumbnail.
   riskLevel: 'safe' | 'attribution' | 'copyrighted';
   copyrightStatus: string;
+}
+
+/**
+ * Creates a compressed thumbnail from a full-size image data URI.
+ * @param dataUrl The original image data URI.
+ * @returns A promise that resolves with the thumbnail data URI.
+ */
+function createThumbnail(dataUrl: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            if (!ctx) {
+                return reject(new Error('Could not get canvas context'));
+            }
+
+            let { width, height } = img;
+
+            // Calculate new dimensions while preserving aspect ratio
+            if (width > height) {
+                if (width > THUMBNAIL_MAX_WIDTH) {
+                    height *= THUMBNAIL_MAX_WIDTH / width;
+                    width = THUMBNAIL_MAX_WIDTH;
+                }
+            } else {
+                if (height > THUMBNAIL_MAX_HEIGHT) {
+                    width *= THUMBNAIL_MAX_HEIGHT / height;
+                    height = THUMBNAIL_MAX_HEIGHT;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Use JPEG for better compression for photos
+            resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = (error) => {
+            reject(error);
+        };
+        img.src = dataUrl;
+    });
 }
 
 
@@ -31,30 +77,32 @@ export function getScanHistory(): ScanHistoryItem[] {
   }
 }
 
-export function addScanToHistory(resultData: ScanResultData): void {
+export async function addScanToHistory(resultData: ScanResultData): Promise<void> {
   if (typeof window === 'undefined') {
     return;
   }
   try {
     const history = getScanHistory();
     
-    // Create a new item for history, EXCLUDING the large imageUrl data URI
+    // Generate a compressed thumbnail from the full-size image.
+    const thumbnailUrl = await createThumbnail(resultData.imageUrl);
+    
+    // Create a new item for history, using the thumbnail URL.
     const { imageUrl, ...restOfResult } = resultData;
 
     const newItem: ScanHistoryItem = {
       ...restOfResult,
       id: new Date().toISOString(),
       date: new Date().toISOString(),
+      imageUrl: thumbnailUrl,
     };
     
-    // Add the new item and keep the history to a reasonable size (e.g., 50 items)
     const newHistory = [newItem, ...history].slice(0, 50);
     
     localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
 
   } catch (error) {
     console.error("Failed to save scan to history:", error);
-    // This indicates a problem, which could still be a quota issue if other apps are storing a lot of data.
   }
 }
 

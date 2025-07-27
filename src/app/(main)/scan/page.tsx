@@ -47,8 +47,8 @@ export default function ScanPage() {
       const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
       const fullResult: ScanResultData = { ...result, imageUrl: imagePreview };
       setScanResult(fullResult);
-      // Now we save the result to history (without the image data)
-      addScanToHistory(fullResult);
+      // Now we save the result to history (with the image data)
+      await addScanToHistory(fullResult);
     } catch (error) {
       console.error('Failed to scan image:', error);
        toast({

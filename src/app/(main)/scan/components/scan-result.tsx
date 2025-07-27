@@ -14,7 +14,7 @@ import html2canvas from 'html2canvas';
 import { useToast } from "@/hooks/use-toast";
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
-  imageUrl: string; // Can be an empty string for historical reports
+  imageUrl: string; // Can be a full data URI or a thumbnail data URI
 };
 
 interface ScanResultProps {
@@ -112,7 +112,7 @@ export default function ScanResult({ data }: ScanResultProps) {
         <Card className="overflow-hidden shadow-lg">
           {data.imageUrl ? (
               <div className="relative h-64 w-full">
-                  <Image src={data.imageUrl} alt="Scanned image" layout="fill" objectFit="cover" data-ai-hint="scanned image result"/>
+                  <Image src={data.imageUrl} alt="Scanned image" layout="fill" objectFit="contain" data-ai-hint="scanned image result"/>
               </div>
           ) : (
               <div className="h-48 w-full bg-muted flex flex-col items-center justify-center text-muted-foreground p-4 text-center">

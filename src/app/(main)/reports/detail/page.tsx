@@ -43,10 +43,10 @@ function ReportDetailContent() {
   }
   
   // Adapt the history item to the format expected by ScanResult.
-  // The imageUrl will be missing, and ScanResult is designed to handle this.
+  // The imageUrl will be the thumbnail from history.
   const resultData: ScanResultData = {
     ...report,
-    imageUrl: report.imageUrl || '', // Pass an empty string if imageUrl is not available
+    imageUrl: report.imageUrl,
   };
 
 
