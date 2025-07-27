@@ -29,11 +29,15 @@ export default function ScanResult({ data }: ScanResultProps) {
 
   useEffect(() => {
     // The Web Share API is only available in secure contexts (HTTPS) and on certain browsers.
-    // We check for its existence before enabling the share button.
-    if (navigator.share) {
+    // We check for its existence and whether it can share our data before enabling the button.
+    const shareData = {
+      title: 'ImageRights AI Scan Report',
+      text: `Here's my image copyright report:\n- Status: ${data.copyrightStatus}\n- Risk Level: ${data.riskLevel}\n- License: ${data.license}`,
+    };
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
       setCanShare(true);
     }
-  }, []);
+  }, [data]);
 
   const handleDownloadPdf = async () => {
     const reportElement = reportRef.current;
@@ -90,11 +94,14 @@ export default function ScanResult({ data }: ScanResultProps) {
       }
     } catch (error) {
       console.error('Failed to share:', error);
-      toast({
-        variant: "destructive",
-        title: "Sharing Failed",
-        description: "Could not share the report at this time.",
-      })
+      // Don't show a toast for permission denied, as it's a user action.
+      if ((error as Error).name !== 'AbortError') {
+        toast({
+          variant: "destructive",
+          title: "Sharing Failed",
+          description: "Could not share the report at this time.",
+        })
+      }
     }
   };
 
