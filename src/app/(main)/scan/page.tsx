@@ -5,13 +5,18 @@ import ImageUploader from './components/image-uploader';
 import ScanResult, { type ScanResultData } from './components/scan-result';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
+import { analyzeImageCopyright } from '@/ai/flows/analyze-image-copyright';
+import { useToast } from "@/hooks/use-toast"
 
 export default function ScanPage() {
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResultData | null>(null);
+  const { toast } = useToast();
 
   const handleImageUpload = (file: File) => {
+    setImageFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
@@ -32,42 +37,26 @@ export default function ScanPage() {
     }
   };
 
-  const handleScan = () => {
+  const handleScan = async () => {
+    if (!imagePreview) return;
     setIsScanning(true);
-    // Simulate API call
-    setTimeout(() => {
-      const results: ScanResultData[] = [
-        {
-          riskLevel: 'safe',
-          copyrightStatus: 'Safe to use',
-          license: 'CC0 (Public Domain)',
-          detectedPlatforms: ['Pexels', 'Unsplash'],
-          firstSeenDate: '2022-03-15',
-          imageUrl: imagePreview!,
-        },
-        {
-          riskLevel: 'attribution',
-          copyrightStatus: 'Attribution needed',
-          license: 'Creative Commons (BY)',
-          detectedPlatforms: ['Flickr', 'Wikipedia'],
-          firstSeenDate: '2021-08-20',
-          imageUrl: imagePreview!,
-        },
-        {
-          riskLevel: 'copyrighted',
-          copyrightStatus: 'Copyrighted - not safe',
-          license: 'Editorial Use Only',
-          detectedPlatforms: ['Getty Images', 'Reuters'],
-          firstSeenDate: '2020-01-10',
-          imageUrl: imagePreview!,
-        },
-      ];
-      setScanResult(results[Math.floor(Math.random() * results.length)]);
+    try {
+      const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
+      setScanResult({ ...result, imageUrl: imagePreview });
+    } catch (error) {
+      console.error('Failed to scan image:', error);
+       toast({
+        variant: "destructive",
+        title: "Scan Failed",
+        description: "There was an error analyzing the image. Please try again.",
+      })
+    } finally {
       setIsScanning(false);
-    }, 3000);
+    }
   };
 
   const handleReset = () => {
+    setImageFile(null);
     setImagePreview(null);
     setScanResult(null);
     setIsScanning(false);

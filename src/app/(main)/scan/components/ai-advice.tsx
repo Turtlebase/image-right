@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { generateAiUsageAdvice } from '@/ai/flows/generate-ai-usage-advice';
+import { generateAiUsageAdvice, type GenerateAiUsageAdviceInput } from '@/ai/flows/generate-ai-usage-advice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lightbulb } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,7 +15,13 @@ export default function AiAdvice(props: ScanResultData) {
     async function getAdvice() {
       try {
         setLoading(true);
-        const result = await generateAiUsageAdvice(props);
+        const input: GenerateAiUsageAdviceInput = {
+            copyrightStatus: props.copyrightStatus,
+            license: props.license,
+            detectedPlatforms: props.detectedOn.map(s => s.domain),
+            copyrightedElements: props.copyrightedElements || [],
+        };
+        const result = await generateAiUsageAdvice(input);
         setAdvice(result.usageAdvice);
       } catch (error) {
         console.error('Failed to get AI advice:', error);
