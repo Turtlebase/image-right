@@ -24,6 +24,10 @@ export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
         setIsMounted(true);
     }, []);
 
+    const handleLinkClick = () => {
+        onOpenChange(false);
+    };
+
     if (!isMounted) {
         return null;
     }
@@ -38,7 +42,7 @@ export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
           <ul className="space-y-2">
             <li>
               <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base text-yellow-400 hover:text-yellow-400" asChild>
-                <Link href="/subscription"><Star className="w-5 h-5 text-yellow-400" /> Upgrade to Premium</Link>
+                <Link href="/subscription" onClick={handleLinkClick}><Star className="w-5 h-5 text-yellow-400" /> Upgrade to Premium</Link>
               </Button>
             </li>
             <Separator className="my-2" />
@@ -56,22 +60,22 @@ export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
             <Separator className="my-2" />
             <li>
               <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
-                <Link href="/privacy"><Lock className="w-5 h-5 text-muted-foreground" /> Privacy Policy</Link>
+                <Link href="/privacy" onClick={handleLinkClick}><Lock className="w-5 h-5 text-muted-foreground" /> Privacy Policy</Link>
               </Button>
             </li>
             <li>
               <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
-                <Link href="/terms"><FileText className="w-5 h-5 text-muted-foreground" /> Terms of Use</Link>
+                <Link href="/terms" onClick={handleLinkClick}><FileText className="w-5 h-5 text-muted-foreground" /> Terms of Use</Link>
               </Button>
             </li>
             <li>
                <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
-                <Link href="/contact"><MessageSquare className="w-5 h-5 text-muted-foreground" /> Contact Us</Link>
+                <Link href="/contact" onClick={handleLinkClick}><MessageSquare className="w-5 h-5 text-muted-foreground" /> Contact Us</Link>
               </Button>
             </li>
             <li>
                <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
-                <Link href="/about"><Info className="w-5 h-5 text-muted-foreground" /> About App</Link>
+                <Link href="/about" onClick={handleLinkClick}><Info className="w-5 h-5 text-muted-foreground" /> About App</Link>
               </Button>
             </li>
           </ul>
