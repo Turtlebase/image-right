@@ -5,21 +5,27 @@ import React, { useState, useEffect } from 'react';
 import ImageUploader from './components/image-uploader';
 import ScanResult, { type ScanResultData } from './components/scan-result';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { Loader2, ArrowLeft, ShieldAlert, Tv } from 'lucide-react';
 import { analyzeImageCopyright } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
 import { addScanToHistory } from '@/lib/history';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from '@/hooks/useSubscription.tsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { useTelegram } from '@/components/telegram-provider';
+
+declare function show_9631988(options?: { ymid?: string }): Promise<void>;
 
 export default function ScanPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isUnlockingScan, setIsUnlockingScan] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResultData | null>(null);
   const { toast } = useToast();
+  const { user } = useTelegram();
   const { subscription, recordScan, canScan } = useSubscription();
+  const scanStatus = canScan();
 
   const handleImageUpload = (file: File) => {
     setImageFile(file);
@@ -43,20 +49,12 @@ export default function ScanPage() {
     }
   };
 
-  const handleScan = async () => {
+  const performScan = async () => {
     if (!imagePreview) return;
-    if (!canScan()) {
-      toast({
-        variant: "destructive",
-        title: "Daily Limit Reached",
-        description: "Upgrade to Premium for unlimited scans.",
-      });
-      return;
-    }
     setIsScanning(true);
-    setScanResult(null); // Clear previous results
+    setScanResult(null);
     try {
-      recordScan(); // Record the scan immediately
+      recordScan();
       const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
       const fullResult: ScanResultData = { ...result, imageUrl: imagePreview };
       setScanResult(fullResult);
@@ -71,6 +69,32 @@ export default function ScanPage() {
     } finally {
       setIsScanning(false);
     }
+  }
+
+  const handleScan = async () => {
+    if (scanStatus === 'can_scan_free') {
+      await performScan();
+    } else if (scanStatus === 'can_scan_with_ad') {
+      setIsUnlockingScan(true);
+      try {
+        await show_9631988({ ymid: user?.id?.toString() || 'scan_unlock' });
+        await performScan();
+      } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Ad Skipped or Failed",
+            description: "The ad was not completed. Please try again to perform the scan.",
+        });
+      } finally {
+        setIsUnlockingScan(false);
+      }
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Daily Limit Reached",
+            description: "You have used all your scans for today. Please try again tomorrow.",
+        });
+    }
   };
 
   const handleReset = () => {
@@ -81,7 +105,6 @@ export default function ScanPage() {
   };
 
   useEffect(() => {
-    // This effect allows pasting images directly
     const pasteHandler = (event: ClipboardEvent) => handlePaste(event as unknown as React.ClipboardEvent);
     window.addEventListener('paste', pasteHandler);
     return () => {
@@ -114,13 +137,45 @@ export default function ScanPage() {
     );
   }
 
+  const renderScanButton = () => {
+    switch (scanStatus) {
+        case 'can_scan_free':
+            return <Button
+                onClick={handleScan}
+                disabled={!imagePreview}
+                size="lg"
+                className="w-full rounded-full text-lg h-14 font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
+              >
+                Scan Now
+              </Button>;
+        case 'can_scan_with_ad':
+            return <Button
+                onClick={handleScan}
+                disabled={!imagePreview || isUnlockingScan}
+                size="lg"
+                className="w-full rounded-full text-lg h-14 font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
+              >
+                {isUnlockingScan ? <Loader2 className="h-5 w-5 animate-spin" /> : <Tv className="h-5 w-5" />}
+                {isUnlockingScan ? 'Loading Ad...' : 'Watch Ad to Scan'}
+              </Button>;
+        case 'limit_reached':
+             return null; // Button is hidden, card is shown instead
+    }
+  }
+
+  const scansLeft = subscription.plan === 'Free' 
+    ? (scanStatus === 'can_scan_free' 
+        ? `${subscription.freeScanLimit - subscription.scansToday} free`
+        : `${subscription.rewardedScanLimit - subscription.scansToday} rewarded`)
+    : 'Unlimited';
+
   return (
     <div className="flex flex-col h-full p-4" onPaste={handlePaste}>
       <div className="text-center my-8">
         <h1 className="text-3xl font-bold font-headline">Scan Image</h1>
         <p className="text-muted-foreground mt-2">Upload an image to check its copyright status.</p>
       </div>
-       {!canScan() ? (
+       {scanStatus === 'limit_reached' ? (
           <Card className="border-destructive/50 bg-destructive/10 text-center p-6">
             <CardHeader className="p-0">
               <ShieldAlert className="h-12 w-12 text-destructive mx-auto mb-2" />
@@ -128,7 +183,7 @@ export default function ScanPage() {
             </CardHeader>
             <CardContent className="p-0 pt-4">
               <p className="text-destructive/90 mb-4">
-                You've used your {subscription.scansToday}/{subscription.scanLimit} free scans for today.
+                You've used all your {subscription.rewardedScanLimit} available scans for today.
               </p>
               <Button asChild>
                 <Link href="/subscription">Upgrade to Premium</Link>
@@ -140,16 +195,9 @@ export default function ScanPage() {
             <ImageUploader onImageUpload={handleImageUpload} imagePreview={imagePreview} />
             <div className="mt-auto pt-4">
               <p className="text-center text-sm text-muted-foreground mb-2">
-                {subscription.plan === 'Free' && `Scans remaining today: ${subscription.scanLimit - subscription.scansToday}`}
+                Scans remaining today: {scansLeft}
               </p>
-              <Button
-                onClick={handleScan}
-                disabled={!imagePreview}
-                size="lg"
-                className="w-full rounded-full text-lg h-14 font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
-              >
-                Scan Now
-              </Button>
+              {renderScanButton()}
             </div>
           </>
         )}

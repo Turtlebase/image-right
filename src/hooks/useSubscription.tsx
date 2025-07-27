@@ -1,13 +1,16 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const FREE_SCAN_LIMIT = 5;
+const REWARDED_SCAN_LIMIT = 20; // 5 free + 15 rewarded
 const PREMIUM_SCAN_LIMIT = 9999; // Effectively unlimited
 
 const SUBSCRIPTION_KEY = 'image-rights-ai-subscription';
 
 export type SubscriptionPlan = 'Free' | 'Premium';
+export type ScanStatus = 'can_scan_free' | 'can_scan_with_ad' | 'limit_reached';
 
 interface SubscriptionState {
   plan: SubscriptionPlan;
@@ -16,10 +19,15 @@ interface SubscriptionState {
 }
 
 interface SubscriptionContextType {
-  subscription: SubscriptionState & { scanLimit: number };
+  subscription: SubscriptionState & { 
+    freeScanLimit: number;
+    rewardedScanLimit: number;
+    premiumScanLimit: number;
+    plan: SubscriptionPlan;
+  };
   setPlan: (plan: SubscriptionPlan) => void;
   recordScan: () => void;
-  canScan: () => boolean;
+  canScan: () => ScanStatus;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
@@ -39,7 +47,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     lastScanDate: null,
   });
   
-  // Load subscription state from localStorage on initial render
   useEffect(() => {
     try {
         const savedState = localStorage.getItem(SUBSCRIPTION_KEY);
@@ -47,14 +54,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             const parsedState: SubscriptionState = JSON.parse(savedState);
             const today = new Date().toISOString().split('T')[0];
             
-            // Reset daily scan count if it's a new day
             if (parsedState.lastScanDate !== today) {
                 parsedState.scansToday = 0;
                 parsedState.lastScanDate = today;
             }
             setSubscription(parsedState);
         } else {
-             // Set initial state for a new user
             const today = new Date().toISOString().split('T')[0];
             setSubscription({ plan: 'Free', scansToday: 0, lastScanDate: today });
         }
@@ -63,7 +68,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  // Save subscription state to localStorage whenever it changes
   useEffect(() => {
     try {
         localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription));
@@ -74,13 +78,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
 
   const setPlan = useCallback((newPlan: SubscriptionPlan) => {
-    setSubscription(prev => ({ ...prev, plan: newPlan }));
+    setSubscription(prev => ({ ...prev, plan: newPlan, scansToday: 0 }));
   }, []);
 
   const recordScan = useCallback(() => {
     setSubscription(prev => {
         const today = new Date().toISOString().split('T')[0];
-        // Check if we need to reset the count for a new day
         const scansToday = prev.lastScanDate === today ? prev.scansToday + 1 : 1;
         return {
             ...prev,
@@ -90,14 +93,27 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     });
   }, []);
   
-  const scanLimit = subscription.plan === 'Premium' ? PREMIUM_SCAN_LIMIT : FREE_SCAN_LIMIT;
-
-  const canScan = useCallback(() => {
-    return subscription.scansToday < scanLimit;
-  }, [subscription.scansToday, scanLimit]);
+  const canScan = useCallback((): ScanStatus => {
+    if (subscription.plan === 'Premium') {
+        return 'can_scan_free';
+    }
+    if (subscription.scansToday < FREE_SCAN_LIMIT) {
+        return 'can_scan_free';
+    }
+    if (subscription.scansToday < REWARDED_SCAN_LIMIT) {
+        return 'can_scan_with_ad';
+    }
+    return 'limit_reached';
+  }, [subscription.plan, subscription.scansToday]);
 
   const value = {
-    subscription: { ...subscription, scanLimit },
+    subscription: { 
+        ...subscription, 
+        freeScanLimit: FREE_SCAN_LIMIT,
+        rewardedScanLimit: REWARDED_SCAN_LIMIT,
+        premiumScanLimit: PREMIUM_SCAN_LIMIT,
+        plan: subscription.plan,
+    },
     setPlan,
     recordScan,
     canScan,

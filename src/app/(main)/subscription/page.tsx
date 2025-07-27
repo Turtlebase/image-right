@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSubscription, type SubscriptionPlan } from '@/hooks/useSubscription';
+import { useSubscription, type SubscriptionPlan } from '@/hooks/useSubscription.tsx';
 import { CheckCircle, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -12,7 +12,8 @@ const plans = {
         name: 'Free',
         price: '$0/mo',
         features: [
-            '5 image checks per day',
+            '5 free image checks per day',
+            '15 additional checks with rewarded ads',
             'Basic copyright results',
             'Unlock full results with rewarded ads',
             'Save up to 5 history reports',
@@ -37,11 +38,9 @@ export default function SubscriptionPage() {
 
     const handleSelectPlan = (plan: SubscriptionPlan) => {
         setPlan(plan);
-        if (plan === 'Premium') {
-            // In a real app, this would redirect to a payment flow.
-            // For now, we just upgrade and go back to the home page.
-            router.push('/');
-        }
+        // In a real app, this would redirect to a payment flow.
+        // For now, we just upgrade and go back to the home page.
+        router.push('/');
     }
 
     return (
