@@ -18,7 +18,7 @@ export default function AiAdvice(props: ScanResultData) {
         const input: GenerateAiUsageAdviceInput = {
             copyrightStatus: props.copyrightStatus,
             license: props.license,
-            detectedPlatforms: props.detectedOn.map(s => s.domain),
+            detectedPlatforms: props.detectedOn?.map(s => s.domain) || [],
             copyrightedElements: props.copyrightedElements || [],
         };
         const result = await generateAiUsageAdvice(input);
