@@ -13,8 +13,9 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from 'next-themes';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from '@/hooks/useSubscription.tsx';
 import Link from 'next/link';
+import { useTelegram } from '@/components/telegram-provider';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -31,9 +32,14 @@ interface ScanResultProps {
   data: ScanResultData;
 }
 
+// This function will be defined globally by the Monetag script
+declare function show_9631988(options?: { ymid?: string }): Promise<void>;
+
+
 export default function ScanResult({ data }: ScanResultProps): React.JSX.Element {
   const { toast } = useToast();
   const { resolvedTheme } = useTheme();
+  const { user } = useTelegram();
   const { subscription } = useSubscription();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -143,16 +149,32 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
   };
   
   const handleUnlock = () => {
+    if (typeof show_9631988 !== 'function') {
+        toast({
+            variant: "destructive",
+            title: "Ad Service Not Available",
+            description: "The ad service is not currently available. Please try again later.",
+        });
+        return;
+    }
+    
     setIsUnlocking(true);
-    // Simulate watching an ad
-    setTimeout(() => {
+    
+    show_9631988({ ymid: user?.id?.toString() || 'anonymous' }).then(() => {
         setIsUnlocked(true);
-        setIsUnlocking(false);
         toast({
             title: "Result Unlocked!",
             description: "You can now view the full report.",
         });
-    }, 2500);
+    }).catch(() => {
+        toast({
+            variant: "destructive",
+            title: "Ad Skipped or Failed",
+            description: "The ad was not completed. Please try again to unlock the report.",
+        });
+    }).finally(() => {
+        setIsUnlocking(false);
+    });
   };
 
   const showPremiumFeatures = subscription.plan === 'Premium' || isUnlocked;
@@ -261,8 +283,8 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
                     <h3 className="text-xl font-bold">Unlock Full Report</h3>
                     <p className="text-muted-foreground mb-4">View AI advice, usage details, and detected sources.</p>
                     <Button onClick={handleUnlock} disabled={isUnlocking}>
-                        <Tv className="mr-2 h-5 w-5" />
-                        Watch Ad to Unlock
+                        {isUnlocking ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Tv className="mr-2 h-5 w-5" />}
+                        {isUnlocking ? 'Loading Ad...' : 'Watch Ad to Unlock'}
                     </Button>
                     <p className="text-xs text-muted-foreground mt-4"> or <Link href="/subscription" className="text-primary underline">Upgrade to Premium</Link> for unlimited access.</p>
                 </div>
@@ -280,18 +302,6 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
             {isShareSupported ? 'Share' : 'Copy'}
         </Button>
       </div>
-
-       <AlertDialog open={isUnlocking}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle className="text-center">Simulating Rewarded Ad</AlertDialogTitle>
-                    <AlertDialogDescription className="text-center">
-                        <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto my-4" />
-                        Unlocking your full report... Thanks for your support!
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-            </AlertDialogContent>
-        </AlertDialog>
     </>
   );
 }

@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  env: {
+    NEXT_PUBLIC_MONETAG_REWARDED_ZONE_ID: process.env.NEXT_PUBLIC_MONETAG_REWARDED_ZONE_ID,
+  },
 };
 
 export default nextConfig;
