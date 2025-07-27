@@ -3,22 +3,26 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import RiskBadge from '@/components/shared/risk-badge';
 import { getScanHistory, type ScanHistoryItem } from '@/lib/history';
-import { FileSearch, Loader2, ImageOff } from 'lucide-react';
+import { FileSearch, Loader2, ImageOff, Star, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useSubscription } from '@/hooks/use-subscription';
+import { Button } from '@/components/ui/button';
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<ScanHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { subscription } = useSubscription();
 
   useEffect(() => {
     // History is loaded only on the client-side
     async function fetchHistory() {
       try {
-        const history = await getScanHistory();
+        const history = getScanHistory(subscription.plan);
         setReports(history);
       } catch (error) {
         console.error("Failed to fetch reports:", error);
@@ -26,8 +30,10 @@ export default function ReportsPage() {
         setLoading(false);
       }
     }
-    fetchHistory();
-  }, []);
+    if (subscription.plan) {
+        fetchHistory();
+    }
+  }, [subscription.plan]);
 
   const handleReportClick = (report: ScanHistoryItem) => {
     // Pass the full report object via query params
@@ -86,6 +92,19 @@ export default function ReportsPage() {
               </Card>
             </button>
           ))}
+
+          {subscription.plan === 'Free' && reports.length >= 5 && (
+            <Card className="bg-primary/10 border-primary/20 text-center p-4">
+              <p className="font-semibold">Your history is limited to 5 reports.</p>
+              <p className="text-sm text-muted-foreground">Upgrade to Premium to save all your scan reports.</p>
+              <Button asChild className="mt-4">
+                <Link href="/subscription">
+                  Upgrade Now <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </Card>
+          )}
+
         </div>
       )}
     </div>

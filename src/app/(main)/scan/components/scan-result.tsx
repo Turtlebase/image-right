@@ -7,12 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import RiskBadge from '@/components/shared/risk-badge';
 import AiAdvice from './ai-advice';
-import { User, Globe, Download, Share2, Info, FileQuestion, Loader2, Copy } from 'lucide-react';
+import { User, Globe, Download, Share2, Info, FileQuestion, Loader2, Copy, Lock, Tv } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from 'next-themes';
+import { useSubscription } from '@/hooks/use-subscription';
+import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
   imageUrl: string; // Can be a full data URI or a thumbnail data URI
@@ -25,9 +34,12 @@ interface ScanResultProps {
 export default function ScanResult({ data }: ScanResultProps): React.JSX.Element {
   const { toast } = useToast();
   const { resolvedTheme } = useTheme();
+  const { subscription } = useSubscription();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isShareSupported, setIsShareSupported] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
 
   useEffect(() => {
     // Check for Web Share API support on the client
@@ -37,6 +49,14 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
   }, []);
 
   const handleDownloadPdf = async () => {
+    if (subscription.plan !== 'Premium') {
+        toast({
+            variant: "destructive",
+            title: "Upgrade to Download",
+            description: "PDF export is a Premium feature.",
+        });
+        return;
+    }
     const reportElement = reportRef.current;
     if (!reportElement) return;
 
@@ -88,7 +108,6 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
       } catch (error) {
          const err = error as Error;
          if (err.name === 'AbortError') {
-            // User cancelled the share sheet, do nothing.
             return;
          } else if (err.name === 'PermissionDeniedError') {
             console.error("Share failed due to permissions:", err);
@@ -107,7 +126,6 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
          }
       }
     } else {
-        // Fallback for browsers that do not support navigator.share
         try {
             await navigator.clipboard.writeText(getShareText());
             toast({
@@ -123,6 +141,21 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
         }
     }
   };
+  
+  const handleUnlock = () => {
+    setIsUnlocking(true);
+    // Simulate watching an ad
+    setTimeout(() => {
+        setIsUnlocked(true);
+        setIsUnlocking(false);
+        toast({
+            title: "Result Unlocked!",
+            description: "You can now view the full report.",
+        });
+    }, 2500);
+  };
+
+  const showPremiumFeatures = subscription.plan === 'Premium' || isUnlocked;
 
   return (
     <>
@@ -159,69 +192,87 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
           </Card>
         )}
 
-        <AiAdvice {...data} />
+        {showPremiumFeatures ? (
+            <>
+                <AiAdvice {...data} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Usage Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-4">
-              <User className="h-5 w-5 text-muted-foreground mt-1" />
-              <div>
-                <p className="text-sm text-muted-foreground">Copyright Owner</p>
-                <p className="font-medium">{data.owner || 'Not Found'}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <Globe className="h-5 w-5 text-muted-foreground mt-1" />
-              <div>
-                <p className="text-sm text-muted-foreground">License</p>
-                <p className="font-medium">{data.license}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Usage Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <User className="h-5 w-5 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Copyright Owner</p>
+                        <p className="font-medium">{data.owner || 'Not Found'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <Globe className="h-5 w-5 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">License</p>
+                        <p className="font-medium">{data.license}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-        {data.copyrightedElements && data.copyrightedElements.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Copyrighted Elements Detected</CardTitle>
-              <CardDescription>
-                Specific elements in this image may be protected by copyright.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {data.copyrightedElements.map((element, index) => (
-                  <div key={index} className="bg-muted px-3 py-1 rounded-full text-sm font-medium">
-                    {element}
+                {data.copyrightedElements && data.copyrightedElements.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Copyrighted Elements Detected</CardTitle>
+                      <CardDescription>
+                        Specific elements in this image may be protected by copyright.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {data.copyrightedElements.map((element, index) => (
+                          <div key={index} className="bg-muted px-3 py-1 rounded-full text-sm font-medium">
+                            {element}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {data.detectedOn && data.detectedOn.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold px-1">Detected On</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {data.detectedOn.map((site, index) => (
+                        <a key={index} href={site.url} target="_blank" rel="noopener noreferrer" className="block">
+                          <div className="bg-muted px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors">
+                            {site.domain}
+                          </div>
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {data.detectedOn && data.detectedOn.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold px-1">Detected On</h3>
-            <div className="flex flex-wrap gap-2">
-              {data.detectedOn.map((site, index) => (
-                <a key={index} href={site.url} target="_blank" rel="noopener noreferrer" className="block">
-                  <div className="bg-muted px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors">
-                    {site.domain}
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
+                )}
+            </>
+        ) : (
+            <Card className="relative p-6 text-center border-2 border-dashed">
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10"></div>
+                <div className="relative z-20">
+                    <Lock className="h-10 w-10 text-primary mx-auto mb-4" />
+                    <h3 className="text-xl font-bold">Unlock Full Report</h3>
+                    <p className="text-muted-foreground mb-4">View AI advice, usage details, and detected sources.</p>
+                    <Button onClick={handleUnlock} disabled={isUnlocking}>
+                        <Tv className="mr-2 h-5 w-5" />
+                        Watch Ad to Unlock
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-4"> or <Link href="/subscription" className="text-primary underline">Upgrade to Premium</Link> for unlimited access.</p>
+                </div>
+            </Card>
         )}
       </div>
       
       <div className="grid grid-cols-2 gap-4 mt-6">
         <Button variant="outline" className="h-12 text-base" onClick={handleDownloadPdf} disabled={isDownloading}>
-          {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
+          {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : (subscription.plan === 'Premium' ? <Download className="mr-2 h-5 w-5" /> : <Lock className="mr-2 h-5 w-5" />)}
           {isDownloading ? 'Saving...' : 'PDF'}
         </Button>
         <Button className="h-12 text-base" onClick={handleShare}>
@@ -229,6 +280,18 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
             {isShareSupported ? 'Share' : 'Copy'}
         </Button>
       </div>
+
+       <AlertDialog open={isUnlocking}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="text-center">Simulating Rewarded Ad</AlertDialogTitle>
+                    <AlertDialogDescription className="text-center">
+                        <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto my-4" />
+                        Unlocking your full report... Thanks for your support!
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }

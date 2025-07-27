@@ -3,10 +3,12 @@
 
 import { type AnalyzeImageCopyrightOutput } from "@/ai/flows/analyze-image-copyright";
 import { type ScanResultData } from "@/app/(main)/scan/components/scan-result";
+import { type SubscriptionPlan } from '@/hooks/use-subscription';
 
 const HISTORY_KEY = 'image-rights-ai-history';
 const THUMBNAIL_MAX_WIDTH = 128;
 const THUMBNAIL_MAX_HEIGHT = 128;
+const FREE_HISTORY_LIMIT = 5;
 
 // The ScanHistoryItem will now include a smaller imageUrl (thumbnail) to avoid storage quota issues.
 export interface ScanHistoryItem extends Omit<AnalyzeImageCopyrightOutput, 'imageUrl'> {
@@ -64,30 +66,33 @@ function createThumbnail(dataUrl: string): Promise<string> {
 }
 
 
-export function getScanHistory(): ScanHistoryItem[] {
+export function getScanHistory(plan: SubscriptionPlan): ScanHistoryItem[] {
   if (typeof window === 'undefined') {
     return [];
   }
   try {
     const historyJson = localStorage.getItem(HISTORY_KEY);
-    return historyJson ? JSON.parse(historyJson) : [];
+    const history = historyJson ? JSON.parse(historyJson) : [];
+    if (plan === 'Free') {
+        return history.slice(0, FREE_HISTORY_LIMIT);
+    }
+    return history;
   } catch (error) {
     console.error("Failed to parse scan history:", error);
     return [];
   }
 }
 
-export async function addScanToHistory(resultData: ScanResultData): Promise<void> {
+export async function addScanToHistory(resultData: ScanResultData, plan: SubscriptionPlan): Promise<void> {
   if (typeof window === 'undefined') {
     return;
   }
   try {
-    const history = getScanHistory();
+    const historyJson = localStorage.getItem(HISTORY_KEY);
+    const history = historyJson ? JSON.parse(historyJson) : [];
     
-    // Generate a compressed thumbnail from the full-size image.
     const thumbnailUrl = await createThumbnail(resultData.imageUrl);
     
-    // Create a new item for history, using the thumbnail URL.
     const { imageUrl, ...restOfResult } = resultData;
 
     const newItem: ScanHistoryItem = {
@@ -97,7 +102,10 @@ export async function addScanToHistory(resultData: ScanResultData): Promise<void
       imageUrl: thumbnailUrl,
     };
     
-    const newHistory = [newItem, ...history].slice(0, 50);
+    let newHistory = [newItem, ...history];
+    if (plan === 'Free') {
+        newHistory = newHistory.slice(0, 50); // Keep more than 5 to allow upgrade
+    }
     
     localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
 
@@ -108,6 +116,8 @@ export async function addScanToHistory(resultData: ScanResultData): Promise<void
 
 
 export function getReportById(id: string): ScanHistoryItem | undefined {
-  const history = getScanHistory();
+  if (typeof window === 'undefined') return;
+  const historyJson = localStorage.getItem(HISTORY_KEY);
+  const history = historyJson ? JSON.parse(historyJson) : [];
   return history.find(report => report.id === id);
 }
