@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
@@ -12,6 +13,7 @@ import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyr
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from 'next-themes';
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
   imageUrl: string; // Can be a full data URI or a thumbnail data URI
@@ -23,6 +25,7 @@ interface ScanResultProps {
 
 export default function ScanResult({ data }: ScanResultProps) {
   const { toast } = useToast();
+  const { theme } = useTheme();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [canShare, setCanShare] = useState(false);
@@ -51,7 +54,7 @@ export default function ScanResult({ data }: ScanResultProps) {
       const canvas = await html2canvas(reportElement, { 
         useCORS: true,
         scale: 2, // Increase scale for better resolution
-        backgroundColor: '#222222', // Match the app's dark background
+        backgroundColor: theme === 'dark' ? '#222222' : '#ffffff',
       });
 
       // Get image data from canvas
@@ -110,7 +113,7 @@ export default function ScanResult({ data }: ScanResultProps) {
 
   return (
     <div className="space-y-6">
-      <div ref={reportRef} className="space-y-6 bg-[#222222] p-4 rounded-lg">
+      <div ref={reportRef} className="space-y-6 bg-background p-4 rounded-lg">
         <Card className="overflow-hidden shadow-lg">
           {data.imageUrl && data.imageUrl.startsWith('data:image') ? (
               <div className="relative h-64 w-full">
@@ -130,15 +133,15 @@ export default function ScanResult({ data }: ScanResultProps) {
         </Card>
         
         {data.moderationInfo && (
-          <Card className="bg-blue-500/10 border-blue-500/20">
+          <Card className="bg-accent/50 border-accent/20">
               <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-lg text-blue-400">
+                  <CardTitle className="flex items-center gap-2 text-lg text-accent-foreground">
                       <Info className="h-5 w-5" />
                       Moderation Info
                   </CardTitle>
               </CardHeader>
               <CardContent>
-                  <p className="text-sm text-foreground/90">{data.moderationInfo}</p>
+                  <p className="text-sm text-accent-foreground/90">{data.moderationInfo}</p>
               </CardContent>
           </Card>
         )}
@@ -174,7 +177,7 @@ export default function ScanResult({ data }: ScanResultProps) {
               <CardDescription>
                 Specific elements in this image may be protected by copyright.
               </CardDescription>
-            </CardHeader>
+            </Header>
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {data.copyrightedElements.map((element, index) => (

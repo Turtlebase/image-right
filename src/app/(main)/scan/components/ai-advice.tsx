@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -34,10 +35,10 @@ export default function AiAdvice(props: ScanResultData) {
   }, [props]);
 
   return (
-    <Card className="bg-primary/10 border-primary/20">
+    <Card className="bg-accent/50 border-accent/20">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Lightbulb className="h-5 w-5 text-primary" />
+        <CardTitle className="flex items-center gap-2 text-lg text-accent-foreground">
+          <Lightbulb className="h-5 w-5 text-accent-foreground" />
           AI Usage Advice
         </CardTitle>
       </CardHeader>
@@ -48,7 +49,7 @@ export default function AiAdvice(props: ScanResultData) {
             <Skeleton className="h-4 w-3/4" />
           </div>
         ) : (
-          <p className="text-sm text-foreground/90">{advice}</p>
+          <p className="text-sm text-accent-foreground/90">{advice}</p>
         )}
       </CardContent>
     </Card>
