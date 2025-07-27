@@ -41,7 +41,7 @@ const AnalyzeImageCopyrightOutputSchema = z.object({
     .array(
       z.object({
         domain: z.string().describe('The domain where the image was found (e.g., "pexels.com", "gettyimages.com").'),
-        url: z.string().describe('The direct URL to the image source page.'),
+        url: z.string().describe('The direct, verifiable URL to the image source page. This link must not be a 404 or a dead link.'),
       })
     )
     .optional()
@@ -75,8 +75,8 @@ Based on your visual analysis and web search, provide the following information 
 2.  **copyrightStatus**: A clear, concise summary of the findings (e.g., "Protected by Copyright", "Public Domain", "Creative Commons with Attribution").
 3.  **license**: The specific license name (e.g., "CC0 1.0", "Getty Images Royalty-Free", "All Rights Reserved").
 4.  **owner**: The name of the company or individual who owns the copyright. If unknown or not applicable (like public domain), state that.
-5.  **copyrightedElements**: A list of the specific elements you identified as copyrighted. For the provided image, this must include "Mercedes-Benz G-Wagon vehicle design" and "Mercedes-Benz logo".
-6.  **detectedOn**: A list of URLs where you found this image or similar versions, which helps verify its origin and licensing. Provide the domain and the full URL.
+5.  **copyrightedElements**: A list of the specific elements you identified as copyrighted.
+6.  **detectedOn**: A list of websites where you found this image or similar versions. It is critical that these URLs are accurate, live, and point directly to the page containing the image. Do not provide links to search engine results or links that result in a 404 error. Provide the domain and the full URL.
 
 Image to analyze: {{media url=imageDataUri}}`,
   }
