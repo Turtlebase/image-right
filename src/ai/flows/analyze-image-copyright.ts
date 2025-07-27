@@ -41,7 +41,7 @@ const AnalyzeImageCopyrightOutputSchema = z.object({
     .array(
       z.object({
         domain: z.string().describe('The domain where the image was found (e.g., "pexels.com", "gettyimages.com").'),
-        url: z.string().url().describe('The direct URL to the image source page.'),
+        url: z.string().describe('The direct URL to the image source page.'),
       })
     )
     .optional()
