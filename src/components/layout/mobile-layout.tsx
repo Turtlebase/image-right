@@ -31,21 +31,46 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     // Only show in-app interstitial ads for free users
-    if (subscription.plan === 'Free') {
-        if (typeof show_9631988 === 'function') {
-            show_9631988({
-                type: 'inApp',
-                inAppSettings: {
-                    frequency: 1, // Show only 1 ad
-                    capping: 1, // within 1 hour
-                    interval: 60, // with a 60-second interval
-                    timeout: 10, // after a 10-second delay
-                    everyPage: false
-                }
-            }).catch((err: any) => console.error("In-app ad error:", err));
-        }
+    if (subscription.plan !== 'Free') {
+      return;
     }
-  }, [subscription.plan, pathname]);
+
+    let adCount = 0;
+    const maxAdsPerSession = 10;
+    let initialTimer: NodeJS.Timeout | null = null;
+    let subsequentInterval: NodeJS.Timeout | null = null;
+    
+    const showAd = () => {
+      if (adCount >= maxAdsPerSession) {
+        if (subsequentInterval) clearInterval(subsequentInterval);
+        return;
+      }
+      
+      if (typeof show_9631988 === 'function') {
+        show_9631988({ type: 'inApp' })
+          .then(() => {
+            adCount++;
+          })
+          .catch((err: any) => console.error("Monetag in-app ad error:", err));
+      }
+    };
+
+    // Show the first ad after 30 seconds
+    initialTimer = setTimeout(() => {
+      showAd();
+      
+      // After the first ad, set an interval for every 5 minutes
+      subsequentInterval = setInterval(showAd, 5 * 60 * 1000); // 5 minutes
+      
+    }, 30 * 1000); // 30 seconds
+
+    // Cleanup timers when the component unmounts or subscription plan changes
+    return () => {
+      if (initialTimer) clearTimeout(initialTimer);
+      if (subsequentInterval) clearInterval(subsequentInterval);
+    };
+
+  }, [subscription.plan]);
 
   return (
     <div className="flex flex-col h-screen w-full max-w-md mx-auto bg-background">
