@@ -15,7 +15,7 @@ const GenerateAiUsageAdviceInputSchema = z.object({
     .string()
     .describe("The copyright status of the image (e.g., 'Safe to use', 'Attribution needed', 'Copyrighted - not safe')."),
   license: z.string().describe('The license information of the image (e.g., CC0, Public Domain, Editorial Use).'),
-  detectedPlatforms: z.string().describe('The platforms where the image was detected.'),
+  detectedPlatforms: z.array(z.string()).describe('The platforms where the image was detected.'),
   firstSeenDate: z.string().describe('The date when the image was first seen.'),
 });
 export type GenerateAiUsageAdviceInput = z.infer<typeof GenerateAiUsageAdviceInputSchema>;
@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
 
   Copyright Status: {{{copyrightStatus}}}
   License: {{{license}}}
-  Detected Platforms: {{{detectedPlatforms}}}
+  Detected Platforms: {{#each detectedPlatforms}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
   First Seen Date: {{{firstSeenDate}}}
 
   Provide clear and concise advice on how the user can use the image safely, taking into account the copyright implications. Limit to 2 sentences.

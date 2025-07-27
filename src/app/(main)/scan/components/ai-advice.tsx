@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { generateAiUsageAdvice, type GenerateAiUsageAdviceInput } from '@/ai/flows/generate-ai-usage-advice';
+import { generateAiUsageAdvice } from '@/ai/flows/generate-ai-usage-advice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lightbulb } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { type ScanResultData } from './scan-result';
 
-export default function AiAdvice(props: GenerateAiUsageAdviceInput) {
+export default function AiAdvice(props: ScanResultData) {
   const [advice, setAdvice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
