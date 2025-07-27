@@ -11,30 +11,33 @@ export async function POST(req: NextRequest) {
 
   if (!WEBHOOK_SECRET) {
     console.error('RAZORPAY_WEBHOOK_SECRET is not set. Cannot verify webhook.');
-    // In a production environment, you should return a 500 error.
-    // For now, we'll proceed but log the security risk.
+    // In a production environment, you must have a secret for security.
+    return NextResponse.json({ status: 'error', message: 'Webhook secret not configured' }, { status: 500 });
   }
   
   const text = await req.text();
   const signature = req.headers.get('x-razorpay-signature');
 
-  if (WEBHOOK_SECRET && signature) {
-      try {
-        const generated_signature = crypto
-            .createHmac('sha256', WEBHOOK_SECRET)
-            .update(text)
-            .digest('hex');
+  if (!signature) {
+    console.warn('Webhook signature missing from header.');
+    return NextResponse.json({ status: 'error', message: 'Invalid signature' }, { status: 403 });
+  }
 
-        if (generated_signature !== signature) {
-            console.warn('Webhook signature verification failed.');
-            return NextResponse.json({ status: 'error', message: 'Invalid signature' }, { status: 403 });
-        }
-        console.log('Webhook signature verified successfully.');
+  try {
+    const expectedSignature = crypto
+        .createHmac('sha256', WEBHOOK_SECRET)
+        .update(text)
+        .digest('hex');
 
-      } catch (error) {
-         console.error('Error during webhook signature verification:', error);
-         return NextResponse.json({ status: 'error', message: 'Internal Server Error' }, { status: 500 });
-      }
+    if (expectedSignature !== signature) {
+        console.warn('Webhook signature verification failed.');
+        return NextResponse.json({ status: 'error', message: 'Invalid signature' }, { status: 403 });
+    }
+    console.log('Webhook signature verified successfully.');
+
+  } catch (error) {
+     console.error('Error during webhook signature verification:', error);
+     return NextResponse.json({ status: 'error', message: 'Internal Server Error' }, { status: 500 });
   }
 
 
