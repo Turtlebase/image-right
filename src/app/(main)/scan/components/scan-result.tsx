@@ -86,14 +86,25 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
       try {
         await navigator.share(shareData);
       } catch (error) {
-         if ((error as Error).name !== 'AbortError') {
-          console.error("Share failed:", error);
-          toast({
-            variant: "destructive",
-            title: "Sharing Failed",
-            description: "Could not share the report at this time.",
-          });
-        }
+         const err = error as Error;
+         if (err.name === 'AbortError') {
+            // User cancelled the share sheet, do nothing.
+            return;
+         } else if (err.name === 'PermissionDeniedError') {
+            console.error("Share failed due to permissions:", err);
+            toast({
+                variant: "destructive",
+                title: "Sharing Blocked",
+                description: "Your browser has blocked the share action. Please check your site permissions.",
+            });
+         } else {
+            console.error("Share failed:", err);
+            toast({
+                variant: "destructive",
+                title: "Sharing Failed",
+                description: "Could not share the report at this time. Please try copying the details instead.",
+            });
+         }
       }
     } else {
         // Fallback for browsers that do not support navigator.share
