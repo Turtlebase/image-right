@@ -165,7 +165,7 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
               <CardDescription>
                 Specific elements in this image may be protected by copyright.
               </CardDescription>
-            </Header>
+            </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {data.copyrightedElements.map((element, index) => (
@@ -193,14 +193,15 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
           </div>
         )}
       </div>
+      
       <div className="grid grid-cols-2 gap-4 mt-6">
-          <Button variant="outline" className="h-12 text-base" onClick={handleDownloadPdf} disabled={isDownloading}>
-            {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
-            {isDownloading ? 'Saving...' : 'PDF'}
-          </Button>
-          <Button className="h-12 text-base" onClick={handleShare} disabled={!canShare}>
-            <Share2 className="mr-2 h-5 w-5" /> Share
-          </Button>
+        <Button variant="outline" className="h-12 text-base" onClick={handleDownloadPdf} disabled={isDownloading}>
+          {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
+          {isDownloading ? 'Saving...' : 'PDF'}
+        </Button>
+        <Button className="h-12 text-base" onClick={handleShare} disabled={!canShare}>
+          <Share2 className="mr-2 h-5 w-5" /> Share
+        </Button>
       </div>
     </>
   );
