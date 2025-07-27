@@ -12,6 +12,9 @@ import { useTelegram } from '../telegram-provider';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Star } from 'lucide-react';
 
+// This function will be defined globally by the Monetag script
+declare function show_9631988(options?: any): Promise<void>;
+
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/scan', label: 'Scan', icon: Scan },
@@ -24,6 +27,24 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const { user } = useTelegram();
   const { subscription } = useSubscription();
+
+  React.useEffect(() => {
+    // Only show in-app interstitial ads for free users
+    if (subscription.plan === 'Free') {
+        if (typeof show_9631988 === 'function') {
+            show_9631988({
+                type: 'inApp',
+                inAppSettings: {
+                    frequency: 2,
+                    capping: 0.1,
+                    interval: 30,
+                    timeout: 5,
+                    everyPage: false
+                }
+            }).catch((err: any) => console.error("In-app ad error:", err));
+        }
+    }
+  }, [subscription.plan]);
 
   return (
     <div className="flex flex-col h-screen w-full max-w-md mx-auto bg-background">
