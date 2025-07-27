@@ -11,7 +11,7 @@ import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyr
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
-  imageUrl?: string; // Make imageUrl optional
+  imageUrl: string; // imageUrl is no longer optional
 };
 
 interface ScanResultProps {

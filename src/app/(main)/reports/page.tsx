@@ -6,23 +6,42 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import RiskBadge from '@/components/shared/risk-badge';
 import Link from 'next/link';
-import { type ScanResultData } from '@/app/(main)/scan/components/scan-result';
 import { getScanHistory, type ScanHistoryItem } from '@/lib/history';
-import { FileSearch } from 'lucide-react';
+import { FileSearch, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<ScanHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    setReports(getScanHistory());
-    setLoading(false);
+    async function fetchHistory() {
+      try {
+        const history = await getScanHistory();
+        setReports(history);
+      } catch (error) {
+        console.error("Failed to fetch reports:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchHistory();
   }, []);
+
+  const handleReportClick = (report: ScanHistoryItem) => {
+    // Pass the full report object via query params (or use a state management library)
+    // Using query params is simpler for this case.
+    const reportJson = encodeURIComponent(JSON.stringify(report));
+    router.push(`/reports/detail?report=${reportJson}`);
+  };
+
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
-        <p>Loading reports...</p>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4">Loading reports...</p>
       </div>
     );
   }
@@ -43,21 +62,24 @@ export default function ReportsPage() {
       ) : (
         <div className="space-y-4">
           {reports.map((report) => (
-            <Link href={`/reports/${report.id}`} key={report.id} className="block group">
+            <button key={report.id} onClick={() => handleReportClick(report)} className="w-full text-left block group">
               <Card className="overflow-hidden transition-all duration-300 group-hover:border-primary group-hover:scale-[1.02] active:scale-100 shadow-md hover:shadow-primary/20">
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className="relative h-20 w-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center">
-                    {/* Since imageUrl is not stored, we show a placeholder or generic icon */}
-                     <FileSearch className="h-10 w-10 text-primary/50"/>
+                  <div className="relative h-20 w-20 flex-shrink-0 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                    {report.imageUrl ? (
+                       <Image src={report.imageUrl} alt="Scanned image thumbnail" layout="fill" objectFit="cover" />
+                    ): (
+                       <FileSearch className="h-10 w-10 text-primary/50"/>
+                    )}
                   </div>
-                  <div className="flex-grow">
-                    <RiskBadge riskLevel={report.result.riskLevel as any} />
+                  <div className="flex-grow overflow-hidden">
+                    <RiskBadge riskLevel={report.riskLevel as any} />
                     <p className="text-sm text-muted-foreground mt-2">Scanned on: {new Date(report.date).toLocaleDateString()}</p>
-                    <p className="text-sm font-medium text-foreground truncate mt-1">{report.result.copyrightStatus}</p>
+                    <p className="text-sm font-medium text-foreground truncate mt-1">{report.copyrightStatus}</p>
                   </div>
                 </CardContent>
               </Card>
-            </Link>
+            </button>
           ))}
         </div>
       )}

@@ -46,7 +46,8 @@ export default function ScanPage() {
       const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
       const fullResult = { ...result, imageUrl: imagePreview };
       setScanResult(fullResult);
-      addScanToHistory(fullResult);
+      // Save to Firebase instead of localStorage
+      await addScanToHistory(fullResult);
     } catch (error) {
       console.error('Failed to scan image:', error);
        toast({
