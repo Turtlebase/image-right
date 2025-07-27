@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -7,6 +8,7 @@ import RiskBadge from '@/components/shared/risk-badge';
 import AiAdvice from './ai-advice';
 import { User, Globe, Download, Share2, Info } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
   imageUrl: string;
@@ -86,10 +88,32 @@ export default function ScanResult({ data }: ScanResultProps) {
           </CardContent>
         </Card>
       )}
+
+      {data.detectedOn && data.detectedOn.length > 0 && (
+          <div className="space-y-2">
+             <h3 className="text-lg font-semibold px-1">Detected On</h3>
+             <Carousel opts={{
+                align: "start",
+                dragFree: true,
+             }}>
+                <CarouselContent className="-ml-2">
+                    {data.detectedOn.map((site, index) => (
+                        <CarouselItem key={index} className="pl-2 basis-auto">
+                           <a href={site.url} target="_blank" rel="noopener noreferrer">
+                             <div className="bg-muted px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors">
+                                 {site.domain}
+                             </div>
+                           </a>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+            </Carousel>
+          </div>
+      )}
       
       <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="h-12 text-base"><Download className="mr-2 h-5 w-5"/> PDF</Button>
-          <Button className="h-12 text-base"><Share2 className="mr-2 h-5 w-5"/> Share</Button>
+          <Button variant="outline" className="h-12 text-base" disabled><Download className="mr-2 h-5 w-5"/> PDF</Button>
+          <Button className="h-12 text-base" disabled><Share2 className="mr-2 h-5 w-5"/> Share</Button>
       </div>
     </div>
   );

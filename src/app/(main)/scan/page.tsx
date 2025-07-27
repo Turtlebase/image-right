@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -6,7 +7,8 @@ import ScanResult, { type ScanResultData } from './components/scan-result';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { analyzeImageCopyright } from '@/ai/flows/analyze-image-copyright';
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
+import { addScanToHistory } from '@/lib/history';
 
 export default function ScanPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -42,7 +44,9 @@ export default function ScanPage() {
     setIsScanning(true);
     try {
       const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
-      setScanResult({ ...result, imageUrl: imagePreview });
+      const fullResult = { ...result, imageUrl: imagePreview };
+      setScanResult(fullResult);
+      addScanToHistory(fullResult);
     } catch (error) {
       console.error('Failed to scan image:', error);
        toast({
