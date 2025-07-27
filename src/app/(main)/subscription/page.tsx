@@ -112,7 +112,11 @@ export default function SubscriptionPage() {
     
     const handleSelectPlan = (plan: SubscriptionPlan) => {
         if (plan === 'Premium') {
-            handleUpgrade();
+            // handleUpgrade(); // Temporarily disabled
+            toast({
+                title: 'Coming Soon!',
+                description: 'Premium subscriptions will be available after our store review is complete.',
+            });
         } else {
             // Logic for downgrading
             setPlan(plan);
@@ -152,10 +156,11 @@ export default function SubscriptionPage() {
                         <CardFooter>
                             {subscription.plan === plan.name ? (
                                 <Button disabled className="w-full">Current Plan</Button>
+                            ) : plan.name === 'Premium' ? (
+                                <Button disabled className="w-full">Coming Soon</Button>
                             ) : (
-                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full" disabled={isLoading && plan.name === 'Premium'}>
-                                    {isLoading && plan.name === 'Premium' && <Loader2 className="animate-spin mr-2"/>}
-                                    {plan.name === 'Free' ? 'Downgrade to Free' : 'Upgrade to Premium'}
+                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full">
+                                    Downgrade to Free
                                 </Button>
                             )}
                         </CardFooter>
