@@ -38,7 +38,7 @@ const plans = {
 
 export default function SubscriptionPage() {
     const { subscription, setPlan, isInitialized } = useSubscription();
-    const { user } = useTelegram();
+    const { user, webApp } = useTelegram();
     const { toast } = useToast();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -59,17 +59,50 @@ export default function SubscriptionPage() {
             return;
         }
 
-        // Construct the Razorpay subscription URL to be opened in an external browser.
-        // This bypasses the Telegram Web App's limitations.
-        const razorpaySubscriptionUrl = `https://checkout.razorpay.com/v1/checkout.js?key=${keyId}&plan_id=${planId}&redirect=1`;
+        if (!user) {
+            toast({
+                variant: 'destructive',
+                title: 'User Not Found',
+                description: 'Could not identify Telegram user. Please restart the app.',
+            });
+            setIsLoading(false);
+            return;
+        }
+
+        // The full URL to your app, needed for the callback.
+        // This assumes your app is running on a specific domain.
+        // In production, you'd replace this with your actual app URL.
+        const appBaseUrl = window.location.origin;
+        const callbackUrl = `${appBaseUrl}/subscription/success`;
+
+        const checkoutUrl = new URL('https://checkout.razorpay.com/v1/checkout.html');
+        checkoutUrl.searchParams.set('key', keyId);
+        checkoutUrl.searchParams.set('plan_id', planId);
+        checkoutUrl.searchParams.set('callback_url', callbackUrl);
+
+        // This is crucial for your webhook to link the payment to the user.
+        const notes = {
+            telegram_user_id: user.id.toString(),
+            username: user.username || '',
+        };
         
+        // Razorpay expects notes as `notes[key]=value` in the URL.
+        Object.entries(notes).forEach(([key, value]) => {
+            checkoutUrl.searchParams.set(`notes[${key}]`, value);
+        });
+
         try {
-            // Open the URL in an external browser.
-            window.open(razorpaySubscriptionUrl, '_blank');
+            // Use Telegram's openLink method for better integration
+            if (webApp) {
+                 webApp.openLink(checkoutUrl.href);
+            } else {
+                // Fallback for browsers
+                window.open(checkoutUrl.href, '_blank');
+            }
             
             toast({
                 title: "Redirecting to Payment",
-                description: "Your browser has opened a new tab to complete the payment. Please return to the app when you're done.",
+                description: "Your browser will open to complete the payment. Please return to the app when you're done.",
             });
 
         } catch (error) {

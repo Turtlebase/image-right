@@ -11,7 +11,10 @@ interface TelegramWebApp {
   initDataUnsafe: {
     user?: TelegramUser;
   };
-  // Add other properties and methods you might use
+  close: () => void;
+  openLink: (url: string) => void;
+  onEvent: (event: 'themeChanged', callback: () => void) => void;
+  offEvent: (event: 'themeChanged', callback: () => void) => void;
 }
 
 interface TelegramUser {
@@ -68,11 +71,9 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
         }
       };
 
-      // @ts-ignore - a bit of a hack as the event type is not in the default declaration
       tg.onEvent('themeChanged', handleThemeChange);
 
       return () => {
-        // @ts-ignore
         tg.offEvent('themeChanged', handleThemeChange);
       };
 
