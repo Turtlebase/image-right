@@ -58,7 +58,10 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       const tg = window.Telegram.WebApp;
       tg.ready();
       setWebApp(tg);
-      setUser(tg.initDataUnsafe.user || null);
+      
+      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        setUser(tg.initDataUnsafe.user);
+      }
       
       // Sync Telegram's color scheme with the app's theme
       if (tg.colorScheme) {
