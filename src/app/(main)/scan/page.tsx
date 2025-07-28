@@ -9,14 +9,14 @@ import { Loader2, ArrowLeft, ShieldAlert, Tv } from 'lucide-react';
 import { analyzeImageCopyright } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
 import { addScanToHistory } from '@/lib/history';
-import { useSubscriptionStore, useUsageStore } from '@/hooks/useSubscription.ts';
+import { useUsageStore } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 
 const FREE_SCAN_LIMIT = 5;
 const REWARDED_SCAN_LIMIT = 30; // 5 free + 25 rewarded
 
-type ScanStatus = 'can_scan_free' | 'can_scan_with_ad' | 'limit_reached' | 'premium';
+type ScanStatus = 'can_scan_free' | 'can_scan_with_ad' | 'limit_reached';
 
 export default function ScanPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -27,7 +27,6 @@ export default function ScanPage() {
   
   const { toast } = useToast();
   
-  const plan = useSubscriptionStore(state => state.plan);
   const { scansToday, lastScanDate, recordScan } = useUsageStore();
   
   const showRewardedAd = useRewardedAd(state => state.showRewardedAd);
@@ -35,7 +34,7 @@ export default function ScanPage() {
 
   useEffect(() => {
     // Zustand's persistence is async, so we wait for rehydration
-    useSubscriptionStore.persist.rehydrate().then(() => setIsInitialized(true));
+    useUsageStore.persist.rehydrate().then(() => setIsInitialized(true));
   }, []);
 
   useEffect(() => {
@@ -47,18 +46,16 @@ export default function ScanPage() {
   }, [isInitialized, lastScanDate]);
 
   const scanStatus = useMemo((): ScanStatus => {
-    if (plan === 'Premium') return 'premium';
     if (scansToday < FREE_SCAN_LIMIT) return 'can_scan_free';
     if (scansToday < REWARDED_SCAN_LIMIT) return 'can_scan_with_ad';
     return 'limit_reached';
-  }, [plan, scansToday]);
+  }, [scansToday]);
 
   const scansLeftText = useMemo(() => {
-    if (plan === 'Premium') return "You have unlimited scans";
     if (scanStatus === 'can_scan_free') return `${FREE_SCAN_LIMIT - scansToday} free scans remaining`;
     if (scanStatus === 'can_scan_with_ad') return `${REWARDED_SCAN_LIMIT - scansToday} rewarded scans remaining`;
-    return "";
-  }, [plan, scanStatus, scansToday]);
+    return "You have used all your scans for today.";
+  }, [scanStatus, scansToday]);
 
   useEffect(() => {
     const pasteHandler = (event: ClipboardEvent) => handlePaste(event as unknown as React.ClipboardEvent);
@@ -113,7 +110,7 @@ export default function ScanPage() {
   }
 
   const handleScan = async () => {
-    if (scanStatus === 'can_scan_free' || scanStatus === 'premium') {
+    if (scanStatus === 'can_scan_free') {
       await performScan();
     } else if (scanStatus === 'can_scan_with_ad') {
       showRewardedAd({
@@ -184,7 +181,6 @@ export default function ScanPage() {
   const renderScanButton = () => {
     const disabled = !imagePreview || isAdLoading;
     switch (scanStatus) {
-        case 'premium':
         case 'can_scan_free':
             return <Button
                 onClick={handleScan}

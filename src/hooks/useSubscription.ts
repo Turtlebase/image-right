@@ -4,27 +4,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-// Define the shape of your subscription state
-interface SubscriptionState {
-  plan: 'Free' | 'Premium';
-  setPlan: (plan: 'Free' | 'Premium') => void;
-}
-
-// Create the Zustand store with persistence
-export const useSubscriptionStore = create<SubscriptionState>()(
-  persist(
-    (set) => ({
-      plan: 'Free', // Default plan
-      setPlan: (plan) => set({ plan }),
-    }),
-    {
-      name: 'subscription-storage', // Name of the item in storage
-      storage: createJSONStorage(() => localStorage), // Use localStorage
-    }
-  )
-);
-
-
 // Define the shape of your usage state
 interface UsageState {
   scansToday: number;
