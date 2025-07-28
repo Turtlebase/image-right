@@ -75,9 +75,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
       }
       
       // Alternate between Monetag and Adsterra
-      // Monetag is even (0, 2, 4...), Adsterra is odd (1, 3, 5...)
-      // But since we fire the first two ads manually, we start the interval logic
-      // based on the current adCount.
+      // The logic starts counting from ad #2, as #0 and #1 are fired manually.
       if (adCount % 2 === 0) {
         showMonetagInApp();
       } else {
@@ -91,8 +89,8 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
     // Show the second ad (Adsterra) after 2 minutes
     adsterraTimer = setTimeout(showAdsterraSocialBar, 2 * 60 * 1000); // 2 minutes
 
-    // Start the recurring 5-minute interval after the first ad has had time to show
-    const intervalStartDelay = 2 * 60 * 1000 + 1000; // Start interval just after the 2-min ad
+    // Start the recurring 5-minute interval after the 2-minute ad has had time to show
+    const intervalStartDelay = 2 * 60 * 1000 + 1000;
     setTimeout(() => {
         subsequentInterval = setInterval(showNextAd, 5 * 60 * 1000); // 5 minutes
     }, intervalStartDelay);
