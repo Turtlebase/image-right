@@ -11,49 +11,23 @@ const POP_UNDER_SRC = '//jigsawharmony.com/f7/9b/bc/f79bbcd6e7e077e257ba8026279a
 const COUNTDOWN_SECONDS = 15;
 
 const AdBanner = ({ adKey, adFormat, height, width, invokeUrl, params = {}, id, className }: { adKey: string, adFormat: string, height: number, width: number, invokeUrl: string, params?: object, id?: string, className?: string }) => {
-    const adContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const container = adContainerRef.current;
-        if (!container) return;
-
-        // Clear previous ads to be safe
-        container.innerHTML = '';
-
-        const configScript = document.createElement('script');
-        configScript.type = 'text/javascript';
-        configScript.innerHTML = `
-            atOptions = {
-                'key' : '${adKey}',
-                'format' : '${adFormat}',
-                'height' : ${height},
-                'width' : ${width},
-                'params' : ${JSON.stringify(params)}
-            };
-        `;
-        container.appendChild(configScript);
-
-        const invokeScript = document.createElement('script');
-        invokeScript.type = 'text/javascript';
-        invokeScript.src = invokeUrl;
-        invokeScript.async = true;
-        container.appendChild(invokeScript);
-
-        if (id) {
-            const nativeDiv = document.createElement('div');
-            nativeDiv.id = id;
-            container.appendChild(nativeDiv);
-        }
-        
-        return () => {
-            if(container) {
-                container.innerHTML = '';
-            }
-        };
-
-    }, [adKey, adFormat, height, width, invokeUrl, params, id]);
-
-    return <div ref={adContainerRef} className={cn("flex justify-center items-center", className)}></div>;
+    // This component now directly renders the script tags.
+    // The parent component will use a `key` to force a full re-mount, ensuring these scripts re-execute.
+    return (
+        <div className={cn("flex justify-center items-center", className)}>
+            <script type="text/javascript" dangerouslySetInnerHTML={{ __html: `
+                atOptions = {
+                    'key' : '${adKey}',
+                    'format' : '${adFormat}',
+                    'height' : ${height},
+                    'width' : ${width},
+                    'params' : ${JSON.stringify(params)}
+                };
+            `}} />
+            <script type="text/javascript" src={invokeUrl} />
+            {id && <div id={id}></div>}
+        </div>
+    );
 };
 
 
@@ -176,18 +150,12 @@ export default function RewardedAdOverlay() {
                         width={320}
                         className="min-h-[50px] w-[320px]"
                     />
-
-                    {/* Native Ad Banner */}
-                    <AdBanner
-                        key={`ad3-${adRenderKey}`}
-                         adKey="70c52ea26480db13807224ac8a8adc70"
-                         invokeUrl="//jigsawharmony.com/70c52ea26480db13807224ac8a8adc70/invoke.js"
-                         adFormat="iframe" // format needs to be specified for the component, even for native
-                         height={250} // Placeholder height for layout
-                         width={300}  // Placeholder width for layout
-                         id="container-70c52ea26480db13807224ac8a8adc70"
-                         className="w-full max-w-[300px]"
-                    />
+                    
+                    {/* Native Ad Banner - Requires slightly different handling for the container div */}
+                     <div key={`ad3-container-${adRenderKey}`} className="w-full max-w-[300px]">
+                        <script async={true} data-cfasync="false" src="//jigsawharmony.com/70c52ea26480db13807224ac8a8adc70/invoke.js"></script>
+                        <div id="container-70c52ea26480db13807224ac8a8adc70"></div>
+                    </div>
                 </main>
 
                 <footer className="p-4 flex-shrink-0 sticky bottom-0 bg-background z-10 border-t">
