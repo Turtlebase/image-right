@@ -17,7 +17,7 @@ const AdBanner = ({ adKey, adFormat, height, width, invokeUrl, params = {}, id, 
         const container = adContainerRef.current;
         if (!container) return;
 
-        // Clear previous ads
+        // Clear previous ads to be safe
         container.innerHTML = '';
 
         const configScript = document.createElement('script');
