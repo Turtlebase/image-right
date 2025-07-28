@@ -10,6 +10,7 @@ import { MenuSheet } from './menu-sheet';
 import UserProfile from './user-profile';
 import { useTelegram } from '../telegram-provider';
 import AppLogo from '../shared/logo';
+import ShufflingBannerAd from '../shared/shuffling-banner-ad';
 
 
 const navItems = [
@@ -36,32 +37,35 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
           {user && <UserProfile user={user} />}
       </header>
 
-      <main className="flex-1 overflow-y-auto pt-4 pb-[80px]">{children}</main>
+      <main className="flex-1 overflow-y-auto pt-4 pb-[130px]">{children}</main>
 
-      <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-20 px-4 pb-4">
-        <div className="bg-background/80 backdrop-blur-lg border border-border rounded-2xl flex items-center justify-around h-full shadow-lg">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex flex-col items-center justify-center text-muted-foreground transition-colors duration-200 w-16',
-                pathname === item.href ? 'text-primary' : 'hover:text-foreground'
-              )}
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto">
+        <ShufflingBannerAd />
+        <footer className="h-20 px-4 pb-4">
+          <div className="bg-background/80 backdrop-blur-lg border border-border rounded-2xl flex items-center justify-around h-full shadow-lg">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex flex-col items-center justify-center text-muted-foreground transition-colors duration-200 w-16',
+                  pathname === item.href ? 'text-primary' : 'hover:text-foreground'
+                )}
+              >
+                <item.icon className="w-6 h-6" />
+                <span className="text-xs mt-1">{item.label}</span>
+              </Link>
+            ))}
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="flex flex-col items-center justify-center text-muted-foreground hover:text-foreground transition-colors duration-200 w-16"
             >
-              <item.icon className="w-6 h-6" />
-              <span className="text-xs mt-1">{item.label}</span>
-            </Link>
-          ))}
-          <button
-            onClick={() => setIsMenuOpen(true)}
-            className="flex flex-col items-center justify-center text-muted-foreground hover:text-foreground transition-colors duration-200 w-16"
-          >
-            <MenuIcon className="w-6 h-6" />
-            <span className="text-xs mt-1">Menu</span>
-          </button>
-        </div>
-      </footer>
+              <MenuIcon className="w-6 h-6" />
+              <span className="text-xs mt-1">Menu</span>
+            </button>
+          </div>
+        </footer>
+      </div>
       <MenuSheet isOpen={isMenuOpen} onOpenChange={setIsMenuOpen} />
     </div>
   );
