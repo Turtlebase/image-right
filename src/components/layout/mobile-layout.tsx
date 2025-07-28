@@ -9,8 +9,6 @@ import { cn } from '@/lib/utils';
 import { MenuSheet } from './menu-sheet';
 import UserProfile from './user-profile';
 import { useTelegram } from '../telegram-provider';
-import { useSubscription } from '@/hooks/useSubscription';
-import { Star } from 'lucide-react';
 import AppLogo from '../shared/logo';
 
 
@@ -25,7 +23,6 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const { user } = useTelegram();
-  const { subscription } = useSubscription();
 
   return (
     <div className="flex flex-col h-screen w-full max-w-md mx-auto bg-background">
@@ -35,11 +32,6 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
                 <AppLogo className="h-8 w-8" />
                 <h1 className="text-xl font-bold">ImageRights AI</h1>
             </Link>
-            {subscription.plan === 'Premium' && (
-                <Link href="/subscription">
-                    <Star className="h-5 w-5 text-yellow-400" />
-                </Link>
-            )}
           </div>
           {user && <UserProfile user={user} />}
       </header>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Moon, Lock, FileText, MessageSquare, Info, Star } from 'lucide-react';
+import { Moon, Lock, FileText, MessageSquare, Info } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -40,12 +40,6 @@ export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
         </SheetHeader>
         <div className="py-4">
           <ul className="space-y-2">
-            <li>
-              <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base text-yellow-400 hover:text-yellow-400" asChild>
-                <Link href="/subscription" onClick={handleLinkClick}><Star className="w-5 h-5 text-yellow-400" /> Upgrade to Premium</Link>
-              </Button>
-            </li>
-            <Separator className="my-2" />
             <li className="flex items-center justify-between p-2 rounded-lg">
               <div className="flex items-center gap-3">
                 <Moon className="w-5 h-5 text-muted-foreground" />

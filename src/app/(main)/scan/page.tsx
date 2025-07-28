@@ -11,21 +11,18 @@ import { useToast } from "@/hooks/use-toast";
 import { addScanToHistory } from '@/lib/history';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
-import { useTelegram } from '@/components/telegram-provider';
-
-// This function will be defined globally by the Monetag script
-declare function GoSplash(): void;
+import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 
 export default function ScanPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [isUnlockingScan, setIsUnlockingScan] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResultData | null>(null);
   const { toast } = useToast();
-  const { user } = useTelegram();
   const { subscription, recordScan, canScan, isInitialized } = useSubscription();
+  const showRewardedAd = useRewardedAd(state => state.showRewardedAd);
+  const isAdLoading = useRewardedAd(state => state.isAdLoading);
+
   const scanStatus = canScan();
 
   const handleImageUpload = (file: File) => {
@@ -55,11 +52,14 @@ export default function ScanPage() {
     setIsScanning(true);
     setScanResult(null);
     try {
-      recordScan();
+      // Don't record the scan if it's unlocked by an ad, as the ad itself is the "payment"
+      if(canScan() === 'can_scan_free') {
+        recordScan();
+      }
       const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
       const fullResult: ScanResultData = { ...result, imageUrl: imagePreview };
       setScanResult(fullResult);
-      await addScanToHistory(fullResult, subscription.plan);
+      await addScanToHistory(fullResult);
     } catch (error) {
       console.error('Failed to scan image:', error);
        toast({
@@ -76,25 +76,24 @@ export default function ScanPage() {
     if (scanStatus === 'can_scan_free') {
       await performScan();
     } else if (scanStatus === 'can_scan_with_ad') {
-      setIsUnlockingScan(true);
-      try {
-        if (typeof GoSplash !== 'function') {
-            throw new Error('Ad function not available.');
+      showRewardedAd({
+        onReward: async () => {
+          toast({
+            title: "Ad Complete!",
+            description: "Your scan is starting now.",
+          });
+          // record the rewarded scan
+          recordScan(); 
+          await performScan();
+        },
+        onError: () => {
+          toast({
+              variant: "destructive",
+              title: "Ad Failed to Load",
+              description: "The rewarded ad could not be displayed. Please try again.",
+          });
         }
-        GoSplash(); // Trigger the rewarded ad
-        // We will assume success and proceed. In a real scenario, you'd use callbacks if the ad network provides them.
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Give ad time to load
-        await performScan();
-      } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Ad Failed to Load",
-            description: "The rewarded ad could not be displayed. Please try again.",
-        });
-        await performScan(); // Allow user to proceed even if ad fails
-      } finally {
-        setIsUnlockingScan(false);
-      }
+      });
     } else {
         toast({
             variant: "destructive",
@@ -153,11 +152,12 @@ export default function ScanPage() {
   }
 
   const renderScanButton = () => {
+    const disabled = !imagePreview || isAdLoading;
     switch (scanStatus) {
         case 'can_scan_free':
             return <Button
                 onClick={handleScan}
-                disabled={!imagePreview}
+                disabled={disabled}
                 size="lg"
                 className="w-full rounded-full text-lg h-14 font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
               >
@@ -166,23 +166,24 @@ export default function ScanPage() {
         case 'can_scan_with_ad':
             return <Button
                 onClick={handleScan}
-                disabled={!imagePreview || isUnlockingScan}
+                disabled={disabled}
                 size="lg"
                 className="w-full rounded-full text-lg h-14 font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
               >
-                {isUnlockingScan ? <Loader2 className="h-5 w-5 animate-spin" /> : <Tv className="h-5 w-5" />}
-                {isUnlockingScan ? 'Loading Ad...' : 'Watch Ad to Scan'}
+                {isAdLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Tv className="h-5 w-5" />}
+                {isAdLoading ? 'Loading Ad...' : 'Watch Ad to Scan'}
               </Button>;
         case 'limit_reached':
-             return null; // Button is hidden, card is shown instead
+             return null;
     }
   }
 
-  const scansLeft = subscription.plan === 'Free' 
-    ? (scanStatus === 'can_scan_free' 
-        ? `${subscription.freeScanLimit - subscription.scansToday} free`
-        : `${subscription.rewardedScanLimit - subscription.scansToday} rewarded`)
-    : 'Unlimited';
+  const scansLeft = subscription.rewardedScanLimit - subscription.scansToday;
+  
+  const scansLeftText = scanStatus === 'can_scan_free' 
+    ? `${subscription.freeScanLimit - subscription.scansToday} free scans remaining`
+    : `${scansLeft} rewarded scans remaining`;
+
 
   return (
     <div className="flex flex-col h-full p-4" onPaste={handlePaste}>
@@ -198,11 +199,8 @@ export default function ScanPage() {
             </CardHeader>
             <CardContent className="p-0 pt-4">
               <p className="text-destructive/90 mb-4">
-                You've used all your {subscription.rewardedScanLimit} available scans for today.
+                You've used all your {subscription.rewardedScanLimit} available scans for today. Please come back tomorrow.
               </p>
-              <Button asChild>
-                <Link href="/subscription">Upgrade to Premium</Link>
-              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -210,7 +208,7 @@ export default function ScanPage() {
             <ImageUploader onImageUpload={handleImageUpload} imagePreview={imagePreview} />
             <div className="mt-auto pt-4">
               <p className="text-center text-sm text-muted-foreground mb-2">
-                Scans remaining today: {scansLeft}
+                {scansLeftText}
               </p>
               {renderScanButton()}
             </div>

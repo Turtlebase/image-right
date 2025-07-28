@@ -5,8 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 import { TelegramProvider } from '@/components/telegram-provider';
 import Script from 'next/script';
-import AppLogo from '@/components/shared/logo';
-import { SubscriptionProvider } from '@/hooks/useSubscription.tsx';
+import { SubscriptionProvider } from '@/hooks/useSubscription';
+import { RewardedAdProvider } from '@/hooks/use-rewarded-ad';
+import RewardedAdOverlay from '@/components/shared/rewarded-ad-overlay';
 
 export const metadata: Metadata = {
   title: {
@@ -39,16 +40,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const monetagZoneId = process.env.NEXT_PUBLIC_MONETAG_REWARDED_ZONE_ID;
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        {monetagZoneId && <script async src={`//syndication.realsrv.com/splash.php?idzone=${monetagZoneId}`}></script>}
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </head>
       <body className="font-body antialiased min-h-screen bg-background">
         <ThemeProvider
@@ -59,7 +57,10 @@ export default function RootLayout({
         >
           <TelegramProvider>
             <SubscriptionProvider>
+              <RewardedAdProvider>
                 {children}
+                <RewardedAdOverlay />
+              </RewardedAdProvider>
             </SubscriptionProvider>
           </TelegramProvider>
           <Toaster />

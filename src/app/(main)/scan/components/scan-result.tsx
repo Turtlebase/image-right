@@ -9,13 +9,10 @@ import RiskBadge from '@/components/shared/risk-badge';
 import AiAdvice from './ai-advice';
 import { User, Globe, Download, Share2, Info, FileQuestion, Loader2, Copy, Lock, Tv } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from 'next-themes';
 import { useSubscription } from '@/hooks/useSubscription';
-import Link from 'next/link';
-import { useTelegram } from '@/components/telegram-provider';
+import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
@@ -26,69 +23,27 @@ interface ScanResultProps {
   data: ScanResultData;
 }
 
-// This function will be defined globally by the Monetag script
-declare function GoSplash(): void;
-
-
 export default function ScanResult({ data }: ScanResultProps): React.JSX.Element {
   const { toast } = useToast();
-  const { resolvedTheme } = useTheme();
-  const { user } = useTelegram();
-  const { subscription, isInitialized } = useSubscription();
+  const { isInitialized } = useSubscription();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isShareSupported, setIsShareSupported] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [isUnlocking, setIsUnlocking] = useState(false);
+  const showRewardedAd = useRewardedAd(state => state.showRewardedAd);
 
   useEffect(() => {
-    // Check for Web Share API support on the client
     if (typeof navigator.share !== 'undefined') {
-        setIsShareSupported(true);
+      setIsShareSupported(true);
     }
   }, []);
 
   const handleDownloadPdf = async () => {
-    if (subscription.plan !== 'Premium') {
-        toast({
-            variant: "destructive",
-            title: "Upgrade to Download",
-            description: "PDF export is a Premium feature.",
-        });
-        return;
-    }
-    const reportElement = reportRef.current;
-    if (!reportElement) return;
-
-    setIsDownloading(true);
-    try {
-      const canvas = await html2canvas(reportElement, { 
-        useCORS: true,
-        scale: 2,
-        backgroundColor: resolvedTheme === 'dark' ? '#18181b' : '#ffffff',
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-      });
-
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      
-      pdf.save(`ImageRights-AI-Report-${new Date().toISOString().split('T')[0]}.pdf`);
-    } catch (error) {
-      console.error("Failed to generate PDF:", error);
-      toast({
+     toast({
         variant: "destructive",
-        title: "Download Failed",
-        description: "Could not generate the PDF report. Please try again.",
-      })
-    } finally {
-      setIsDownloading(false);
-    }
+        title: "Feature Not Available",
+        description: "PDF export is not available in the current version.",
+    });
   };
 
   const getShareText = () => {
@@ -109,28 +64,20 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
          const err = error as Error;
          if (err.name === 'AbortError') {
             return;
-         } else if (err.name === 'PermissionDeniedError') {
-            console.error("Share failed due to permissions:", err);
-            toast({
-                variant: "destructive",
-                title: "Sharing Blocked",
-                description: "Your browser has blocked the share action. Please check your site permissions.",
-            });
-         } else {
-            console.error("Share failed:", err);
-            toast({
-                variant: "destructive",
-                title: "Sharing Failed",
-                description: "Could not share the report at this time. Please try copying the details instead.",
-            });
          }
+        console.error("Share failed:", err);
+        toast({
+            variant: "destructive",
+            title: "Sharing Failed",
+            description: "Could not share the report.",
+        });
       }
     } else {
         try {
             await navigator.clipboard.writeText(getShareText());
             toast({
                 title: "Copied to Clipboard",
-                description: "Report details have been copied to your clipboard.",
+                description: "Report details have been copied.",
             });
         } catch (error) {
              toast({
@@ -142,29 +89,23 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
     }
   };
   
-  const handleUnlock = async () => {
-    setIsUnlocking(true);
-    try {
-        if (typeof GoSplash !== 'function') {
-            throw new Error('Ad function not available.');
-        }
-        GoSplash();
-        // Assume success and unlock immediately.
-        await new Promise(resolve => setTimeout(resolve, 1500));
+  const handleUnlock = () => {
+    showRewardedAd({
+      onReward: () => {
         setIsUnlocked(true);
         toast({
             title: "Result Unlocked!",
             description: "You can now view the full report.",
         });
-    } catch(e) {
-        toast({
+      },
+      onError: () => {
+         toast({
             variant: "destructive",
             title: "Ad Failed to Load",
-            description: "The ad was not completed. Please try again to unlock the report.",
+            description: "Please try again to unlock the report.",
         });
-    } finally {
-        setIsUnlocking(false);
-    }
+      }
+    });
   };
 
   if (!isInitialized) {
@@ -176,8 +117,6 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
       </div>
     );
   }
-
-  const showPremiumFeatures = subscription.plan === 'Premium' || isUnlocked;
 
   return (
     <>
@@ -214,7 +153,7 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
           </Card>
         )}
 
-        {showPremiumFeatures ? (
+        {isUnlocked ? (
             <>
                 <AiAdvice {...data} />
 
@@ -282,19 +221,18 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
                     <Lock className="h-10 w-10 text-primary mx-auto mb-4" />
                     <h3 className="text-xl font-bold">Unlock Full Report</h3>
                     <p className="text-muted-foreground mb-4">View AI advice, usage details, and detected sources.</p>
-                    <Button onClick={handleUnlock} disabled={isUnlocking}>
-                        {isUnlocking ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Tv className="mr-2 h-5 w-5" />}
-                        {isUnlocking ? 'Loading Ad...' : 'Watch Ad to Unlock'}
+                    <Button onClick={handleUnlock}>
+                        <Tv className="mr-2 h-5 w-5" />
+                        Watch Ad to Unlock
                     </Button>
-                    <p className="text-xs text-muted-foreground mt-4"> or <Link href="/subscription" className="text-primary underline">Upgrade to Premium</Link> for unlimited access.</p>
                 </div>
             </Card>
         )}
       </div>
       
       <div className="grid grid-cols-2 gap-4 mt-6">
-        <Button variant="outline" className="h-12 text-base" onClick={handleDownloadPdf} disabled={isDownloading}>
-          {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : (subscription.plan === 'Premium' ? <Download className="mr-2 h-5 w-5" /> : <Lock className="mr-2 h-5 w-5" />)}
+        <Button variant="outline" className="h-12 text-base" onClick={handleDownloadPdf} disabled={isDownloading || true}>
+          {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
           {isDownloading ? 'Saving...' : 'PDF'}
         </Button>
         <Button className="h-12 text-base" onClick={handleShare}>

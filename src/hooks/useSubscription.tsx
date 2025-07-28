@@ -4,28 +4,22 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const FREE_SCAN_LIMIT = 5;
-const REWARDED_SCAN_LIMIT = 20; // 5 free + 15 rewarded
-const PREMIUM_SCAN_LIMIT = 9999; // Effectively unlimited
+const REWARDED_SCAN_LIMIT = 30; // 5 free + 25 rewarded
 
-const SUBSCRIPTION_KEY = 'image-rights-ai-subscription';
+const USAGE_KEY = 'image-rights-ai-usage';
 
-export type SubscriptionPlan = 'Free' | 'Premium';
 export type ScanStatus = 'can_scan_free' | 'can_scan_with_ad' | 'limit_reached';
 
-interface SubscriptionState {
-  plan: SubscriptionPlan;
+interface UsageState {
   scansToday: number;
   lastScanDate: string | null;
 }
 
 interface SubscriptionContextType {
-  subscription: SubscriptionState & { 
+  subscription: UsageState & { 
     freeScanLimit: number;
     rewardedScanLimit: number;
-    premiumScanLimit: number;
-    plan: SubscriptionPlan;
   };
-  setPlan: (plan: SubscriptionPlan) => void;
   recordScan: () => void;
   canScan: () => ScanStatus;
   isInitialized: boolean;
@@ -43,8 +37,7 @@ export const useSubscription = () => {
 };
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
-  const [subscription, setSubscription] = useState<SubscriptionState>({
-    plan: 'Free',
+  const [usage, setUsage] = useState<UsageState>({
     scansToday: 0,
     lastScanDate: null,
   });
@@ -52,28 +45,25 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   
   const loadState = useCallback(() => {
     try {
-        const savedState = localStorage.getItem(SUBSCRIPTION_KEY);
+        const savedState = localStorage.getItem(USAGE_KEY);
         const today = new Date().toISOString().split('T')[0];
-        let initialState: SubscriptionState;
+        let initialState: UsageState;
 
         if (savedState) {
-            const parsedState: SubscriptionState = JSON.parse(savedState);
+            const parsedState: UsageState = JSON.parse(savedState);
             if (parsedState.lastScanDate !== today) {
-                // Reset scans for the new day
                 initialState = { ...parsedState, scansToday: 0, lastScanDate: today };
             } else {
                 initialState = parsedState;
             }
         } else {
-            // No saved state, create a fresh one
-            initialState = { plan: 'Free', scansToday: 0, lastScanDate: today };
+            initialState = { scansToday: 0, lastScanDate: today };
         }
-        setSubscription(initialState);
+        setUsage(initialState);
     } catch (error) {
-        console.error("Failed to load subscription state:", error);
-        // Fallback to a default state in case of error
+        console.error("Failed to load usage state:", error);
         const today = new Date().toISOString().split('T')[0];
-        setSubscription({ plan: 'Free', scansToday: 0, lastScanDate: today });
+        setUsage({ scansToday: 0, lastScanDate: today });
     } finally {
         if (!isInitialized) {
             setIsInitialized(true);
@@ -83,7 +73,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     loadState();
-  }, []);
+  }, [loadState]);
 
   const refreshSubscription = useCallback(() => {
     loadState();
@@ -91,23 +81,17 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
 
   useEffect(() => {
-    // Only save to localStorage if state has been initialized from it first
     if (isInitialized) {
         try {
-            localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription));
+            localStorage.setItem(USAGE_KEY, JSON.stringify(usage));
         } catch (error) {
-            console.error("Failed to save subscription state:", error);
+            console.error("Failed to save usage state:", error);
         }
     }
-  }, [subscription, isInitialized]);
-
-
-  const setPlan = useCallback((newPlan: SubscriptionPlan) => {
-    setSubscription(prev => ({ ...prev, plan: newPlan, scansToday: 0 }));
-  }, []);
+  }, [usage, isInitialized]);
 
   const recordScan = useCallback(() => {
-    setSubscription(prev => {
+    setUsage(prev => {
         const today = new Date().toISOString().split('T')[0];
         const scansToday = prev.lastScanDate === today ? prev.scansToday + 1 : 1;
         return {
@@ -119,27 +103,21 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   }, []);
   
   const canScan = useCallback((): ScanStatus => {
-    if (subscription.plan === 'Premium') {
+    if (usage.scansToday < FREE_SCAN_LIMIT) {
         return 'can_scan_free';
     }
-    if (subscription.scansToday < FREE_SCAN_LIMIT) {
-        return 'can_scan_free';
-    }
-    if (subscription.scansToday < REWARDED_SCAN_LIMIT) {
+    if (usage.scansToday < REWARDED_SCAN_LIMIT) {
         return 'can_scan_with_ad';
     }
     return 'limit_reached';
-  }, [subscription.plan, subscription.scansToday]);
+  }, [usage.scansToday]);
 
   const value = {
     subscription: { 
-        ...subscription, 
+        ...usage, 
         freeScanLimit: FREE_SCAN_LIMIT,
         rewardedScanLimit: REWARDED_SCAN_LIMIT,
-        premiumScanLimit: PREMIUM_SCAN_LIMIT,
-        plan: subscription.plan,
     },
-    setPlan,
     recordScan,
     canScan,
     isInitialized,
