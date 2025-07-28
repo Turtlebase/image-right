@@ -142,11 +142,11 @@ export default function SubscriptionPage() {
                                 <div key={index} className="flex items-start gap-3">
                                     <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
                                     <p>{feature}</p>
-                                </div>
+                                 </div>
                             ))}
                         </CardContent>
                         <CardFooter>
-                            {subscription.plan === plan.name ? (
+                             {subscription.plan === plan.name ? (
                                 <Button disabled className="w-full">Current Plan</Button>
                             ) : (
                                 <Button onClick={handleUpgrade} className="w-full" disabled={isLoading || plan.name === 'Free'}>

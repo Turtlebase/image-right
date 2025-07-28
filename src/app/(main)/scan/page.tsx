@@ -14,7 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useTelegram } from '@/components/telegram-provider';
 
-declare function show_9631988(options?: { ymid?: string }): Promise<void>;
+// This function will be defined globally by the Monetag script
+declare function GoSplash(): void;
 
 export default function ScanPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -77,14 +78,20 @@ export default function ScanPage() {
     } else if (scanStatus === 'can_scan_with_ad') {
       setIsUnlockingScan(true);
       try {
-        await show_9631988({ ymid: user?.id?.toString() || 'scan_unlock' });
+        if (typeof GoSplash !== 'function') {
+            throw new Error('Ad function not available.');
+        }
+        GoSplash(); // Trigger the rewarded ad
+        // We will assume success and proceed. In a real scenario, you'd use callbacks if the ad network provides them.
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Give ad time to load
         await performScan();
       } catch (error) {
         toast({
             variant: "destructive",
-            title: "Ad Skipped or Failed",
-            description: "The ad was not completed. Please try again to perform the scan.",
+            title: "Ad Failed to Load",
+            description: "The rewarded ad could not be displayed. Please try again.",
         });
+        await performScan(); // Allow user to proceed even if ad fails
       } finally {
         setIsUnlockingScan(false);
       }

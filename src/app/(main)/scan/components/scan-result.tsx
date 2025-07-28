@@ -27,7 +27,7 @@ interface ScanResultProps {
 }
 
 // This function will be defined globally by the Monetag script
-declare function show_9631988(options?: { ymid?: string }): Promise<void>;
+declare function GoSplash(): void;
 
 
 export default function ScanResult({ data }: ScanResultProps): React.JSX.Element {
@@ -142,33 +142,29 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
     }
   };
   
-  const handleUnlock = () => {
-    if (typeof show_9631988 !== 'function') {
-        toast({
-            variant: "destructive",
-            title: "Ad Service Not Available",
-            description: "The ad service is not currently available. Please try again later.",
-        });
-        return;
-    }
-    
+  const handleUnlock = async () => {
     setIsUnlocking(true);
-    
-    show_9631988({ ymid: user?.id?.toString() || 'anonymous' }).then(() => {
+    try {
+        if (typeof GoSplash !== 'function') {
+            throw new Error('Ad function not available.');
+        }
+        GoSplash();
+        // Assume success and unlock immediately.
+        await new Promise(resolve => setTimeout(resolve, 1500));
         setIsUnlocked(true);
         toast({
             title: "Result Unlocked!",
             description: "You can now view the full report.",
         });
-    }).catch(() => {
+    } catch(e) {
         toast({
             variant: "destructive",
-            title: "Ad Skipped or Failed",
+            title: "Ad Failed to Load",
             description: "The ad was not completed. Please try again to unlock the report.",
         });
-    }).finally(() => {
+    } finally {
         setIsUnlocking(false);
-    });
+    }
   };
 
   if (!isInitialized) {

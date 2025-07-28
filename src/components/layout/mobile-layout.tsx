@@ -12,10 +12,6 @@ import { useTelegram } from '../telegram-provider';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Star } from 'lucide-react';
 import AppLogo from '../shared/logo';
-import AdsterraBanner from '../ads/adsterra-banner';
-
-// This function will be defined globally by the Monetag script
-declare function show_9631988(options?: any): Promise<void>;
 
 
 const navItems = [
@@ -30,47 +26,6 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const { user } = useTelegram();
   const { subscription } = useSubscription();
-
-  React.useEffect(() => {
-    // Only show pop-up style ads for free users
-    if (subscription.plan !== 'Free') {
-      return;
-    }
-
-    let adCount = 0;
-    const maxAdsPerSession = 10;
-    let initialTimer: NodeJS.Timeout | null = null;
-    let subsequentInterval: NodeJS.Timeout | null = null;
-
-    const showMonetagInApp = () => {
-      if (adCount >= maxAdsPerSession) {
-        if (subsequentInterval) clearInterval(subsequentInterval);
-        return;
-      }
-      if (typeof show_9631988 === 'function') {
-        show_9631988()
-          .then(() => {
-            adCount++;
-          })
-          .catch((err: any) => console.error("Monetag in-app ad error:", err));
-      }
-    };
-
-    // Show the first ad after 30 seconds
-    initialTimer = setTimeout(() => {
-        showMonetagInApp();
-        // After the first ad, start the recurring 5-minute interval
-        subsequentInterval = setInterval(showMonetagInApp, 5 * 60 * 1000); // 5 minutes
-    }, 30 * 1000); // 30 seconds
-
-
-    // Cleanup timers when the component unmounts or subscription plan changes
-    return () => {
-      if (initialTimer) clearTimeout(initialTimer);
-      if (subsequentInterval) clearInterval(subsequentInterval);
-    };
-
-  }, [subscription.plan]);
 
   return (
     <div className="flex flex-col h-screen w-full max-w-md mx-auto bg-background">
@@ -89,11 +44,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
           {user && <UserProfile user={user} />}
       </header>
 
-      <main className="flex-1 overflow-y-auto pt-4 pb-[140px]">{children}</main>
-
-      <div className="fixed bottom-20 left-0 right-0 max-w-md mx-auto flex justify-center px-4">
-        <AdsterraBanner />
-      </div>
+      <main className="flex-1 overflow-y-auto pt-4 pb-[80px]">{children}</main>
 
       <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-20 px-4 pb-4">
         <div className="bg-background/80 backdrop-blur-lg border border-border rounded-2xl flex items-center justify-around h-full shadow-lg">
