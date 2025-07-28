@@ -83,7 +83,7 @@ export default function SubscriptionPage() {
                 name: 'ImageRights AI Premium',
                 description: 'Monthly Subscription',
                 callback_url: `${window.location.origin}/subscription/success`,
-                redirect: true, // Important for webhooks and server-side confirmation
+                redirect: true,
                  config: {
                     display: {
                         hide: [{ method: 'upi' }]

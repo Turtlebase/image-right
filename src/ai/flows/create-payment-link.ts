@@ -33,7 +33,7 @@ export async function createPaymentLink(input: CreatePaymentLinkInput): Promise<
   return createPaymentLinkFlow(input);
 }
 
-const createPaymentLinkFlow = ai.flow(
+const createPaymentLinkFlow = ai.defineFlow(
   {
     name: 'createPaymentLinkFlow',
     inputSchema: CreatePaymentLinkInputSchema,
@@ -54,10 +54,6 @@ const createPaymentLinkFlow = ai.flow(
           telegram_user_id: input.telegramUserId,
           username: input.telegramUsername,
         },
-        notify_info: {
-          notify_phone: false,
-          notify_email: false,
-        }
       });
       return { subscription_id: result.id };
     } catch (error) {
