@@ -67,6 +67,7 @@ export default function SubscriptionPage() {
             quantity: 1,      // Required when using plan_id
             name: "ImageRights AI Premium",
             description: "Monthly Subscription",
+            callback_url: `${window.location.origin}/subscription`,
             handler: function (response: any) {
                 toast({
                     title: 'Subscription Successful!',
@@ -85,6 +86,7 @@ export default function SubscriptionPage() {
                 color: "#29ABE2" // Vibrant blue from your style guide
             },
             modal: {
+                escape: false,
                 ondismiss: function() {
                     setIsLoading(false);
                 }
