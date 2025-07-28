@@ -48,7 +48,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
         return;
       }
       if (typeof show_9631988 === 'function') {
-        show_9631988({ type: 'inApp' })
+        show_9631988()
           .then(() => {
             adCount++;
           })
