@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
+declare const Razorpay: any;
+
 const plans = {
     Free: {
         name: 'Free',
@@ -25,7 +27,7 @@ const plans = {
     },
     Premium: {
         name: 'Premium',
-        price: '₹99/mo', // Updated price for Indian audience
+        price: '₹99/mo',
         features: [
             'Unlimited image checks',
             'Advanced, detailed results',
@@ -38,50 +40,81 @@ const plans = {
 
 export default function SubscriptionPage() {
     const { subscription, isInitialized } = useSubscription();
-    const { webApp } = useTelegram();
+    const { user } = useTelegram();
     const { toast } = useToast();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     const handleUpgrade = () => {
         setIsLoading(true);
+        const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
         const planId = process.env.NEXT_PUBLIC_RAZORPAY_PLAN_ID;
-
-        if (!planId) {
+        
+        if (typeof window.Razorpay === 'undefined') {
             toast({
                 variant: 'destructive',
-                title: 'Configuration Error',
-                description: 'Payment Plan ID is not configured. Please contact support.',
+                title: 'Payment Gateway Error',
+                description: 'Razorpay script not loaded. Please try again later.',
             });
             setIsLoading(false);
             return;
         }
 
-        // This is a direct, shareable link to your Razorpay plan
-        const paymentLink = `https://rzp.io/i/${planId}`;
-        
-        if (webApp) {
-            // Use Telegram's official method to open the link in an external browser
-            webApp.openLink(paymentLink);
-        } else {
-            // Fallback for standard browsers
-            window.open(paymentLink, '_blank');
+        if (!keyId || !planId) {
+            toast({
+                variant: 'destructive',
+                title: 'Configuration Error',
+                description: 'Payment details are not configured. Please contact support.',
+            });
+            setIsLoading(false);
+            return;
         }
         
-        toast({
-            title: 'Redirecting to Payment...',
-            description: 'You will be taken to your browser to complete the payment. Please return to the app when finished.',
-        });
-        
-        // Since we can't know when payment is complete, we don't block the UI forever
-        setTimeout(() => setIsLoading(false), 5000);
+        const callbackUrl = `${window.location.origin}/subscription/success`;
+
+        const options = {
+            key: keyId,
+            plan_id: planId,
+            callback_url: callbackUrl,
+            notes: {
+                telegram_user_id: user?.id?.toString() || 'N/A',
+                username: user?.username || 'N/A',
+            },
+            prefill: {
+                name: [user?.first_name, user?.last_name].filter(Boolean).join(' '),
+                email: 'user@example.com', // Dummy email, not used for subscription
+            },
+            theme: {
+                color: "#29ABE2"
+            }
+        };
+
+        try {
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Payment Failed',
+                    description: response.error.description || 'An unknown error occurred.',
+                });
+                setIsLoading(false);
+            });
+            rzp.open();
+        } catch(e) {
+            console.error("Razorpay error", e)
+             toast({
+                variant: 'destructive',
+                title: 'Initialization Error',
+                description: 'Could not start the payment process. Please try again.',
+            });
+            setIsLoading(false);
+        }
     }
     
     const handleSelectPlan = (plan: SubscriptionPlan) => {
         if (plan === 'Premium') {
             handleUpgrade();
         } else {
-            // Downgrade logic remains the same
             router.push('/');
         }
     }
@@ -134,7 +167,7 @@ export default function SubscriptionPage() {
                 ))}
             </div>
              <p className="text-center text-xs text-muted-foreground mt-6">
-                After upgrading, you may need to restart the app for the changes to take full effect. Payments are securely processed by Razorpay.
+                Payments are securely processed by Razorpay. You may need to restart the app after payment if your plan does not update automatically.
             </p>
         </div>
     );
