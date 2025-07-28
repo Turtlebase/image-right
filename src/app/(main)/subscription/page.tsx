@@ -47,14 +47,6 @@ export default function SubscriptionPage() {
 
     const handleUpgrade = () => {
         setIsLoading(true);
-        
-        toast({
-            title: 'Coming Soon!',
-            description: 'Premium subscriptions are not yet available. Please check back later.',
-        });
-        setIsLoading(false);
-        return;
-
 
         const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
         const planId = process.env.NEXT_PUBLIC_RAZORPAY_PLAN_ID;
@@ -164,7 +156,7 @@ export default function SubscriptionPage() {
                             {subscription.plan === plan.name ? (
                                 <Button disabled className="w-full">Current Plan</Button>
                             ) : (
-                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full" disabled={isLoading || plan.name === 'Premium'}>
+                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full" disabled={isLoading}>
                                     {isLoading && plan.name === 'Premium' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     {plan.name === 'Free' ? 'Downgrade to Free' : 'Upgrade to Premium'}
                                 </Button>
