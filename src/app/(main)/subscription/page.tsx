@@ -63,8 +63,8 @@ export default function SubscriptionPage() {
 
         const options = {
             key: keyId,
-            plan_id: planId, // Correct parameter for plan-based subscriptions
-            quantity: 1,      // Required when using plan_id
+            plan_id: planId,
+            quantity: 1,
             name: "ImageRights AI Premium",
             description: "Monthly Subscription",
             callback_url: `${window.location.origin}/subscription`,
@@ -74,6 +74,7 @@ export default function SubscriptionPage() {
                     description: 'Welcome to Premium!',
                 });
                 setPlan('Premium');
+                setIsLoading(false);
                 router.push('/');
             },
             prefill: {
@@ -83,14 +84,21 @@ export default function SubscriptionPage() {
                 telegram_user_id: user?.id,
             },
             theme: {
-                color: "#29ABE2" // Vibrant blue from your style guide
+                color: "#29ABE2"
             },
             modal: {
                 escape: false,
                 ondismiss: function() {
                     setIsLoading(false);
                 }
-            }
+            },
+            config: {
+                display: {
+                    hide: [
+                        { method: 'upi' }
+                    ],
+                },
+            },
         };
         
         try {
@@ -111,7 +119,6 @@ export default function SubscriptionPage() {
         if (plan === 'Premium') {
             handleUpgrade();
         } else {
-            // Logic for downgrading
             setPlan(plan);
             toast({
                 title: 'Plan Changed',
