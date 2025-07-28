@@ -5,11 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 import { TelegramProvider } from '@/components/telegram-provider';
 import Script from 'next/script';
-import { UsageProvider } from '@/hooks/useUsage';
 import { RewardedAdProvider } from '@/hooks/use-rewarded-ad';
-import dynamic from 'next/dynamic';
-
-const RewardedAdOverlay = dynamic(() => import('@/components/shared/rewarded-ad-overlay'), { ssr: false });
+import ClientRewardedAd from '@/components/shared/client-rewarded-ad';
 
 
 export const metadata: Metadata = {
@@ -59,12 +56,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TelegramProvider>
-            <UsageProvider>
-              <RewardedAdProvider>
-                {children}
-                <RewardedAdOverlay />
-              </RewardedAdProvider>
-            </UsageProvider>
+            <RewardedAdProvider>
+              {children}
+              <ClientRewardedAd />
+            </RewardedAdProvider>
           </TelegramProvider>
           <Toaster />
         </ThemeProvider>

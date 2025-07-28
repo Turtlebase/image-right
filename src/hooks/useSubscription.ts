@@ -1,142 +1,60 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
-const FREE_SCAN_LIMIT = 5;
-const REWARDED_SCAN_LIMIT = 20; // 5 free + 15 rewarded
-const PREMIUM_SCAN_LIMIT = 9999; // Effectively unlimited
-
-const SUBSCRIPTION_KEY = 'image-rights-ai-subscription';
-
-export type SubscriptionPlan = 'Free' | 'Premium';
-export type ScanStatus = 'can_scan_free' | 'can_scan_with_ad' | 'limit_reached';
-
+// Define the shape of your subscription state
 interface SubscriptionState {
-  plan: SubscriptionPlan;
+  plan: 'Free' | 'Premium';
+  setPlan: (plan: 'Free' | 'Premium') => void;
+}
+
+// Create the Zustand store with persistence
+export const useSubscriptionStore = create<SubscriptionState>()(
+  persist(
+    (set) => ({
+      plan: 'Free', // Default plan
+      setPlan: (plan) => set({ plan }),
+    }),
+    {
+      name: 'subscription-storage', // Name of the item in storage
+      storage: createJSONStorage(() => localStorage), // Use localStorage
+    }
+  )
+);
+
+
+// Define the shape of your usage state
+interface UsageState {
   scansToday: number;
   lastScanDate: string | null;
-}
-
-interface SubscriptionContextType {
-  subscription: SubscriptionState & { 
-    freeScanLimit: number;
-    rewardedScanLimit: number;
-    premiumScanLimit: number;
-  };
-  setPlan: (plan: SubscriptionPlan) => void;
   recordScan: () => void;
-  canScan: () => ScanStatus;
-  isInitialized: boolean;
-  refreshSubscription: () => void;
+  resetScans: () => void;
 }
 
-const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
+// Helper to get today's date string
+const getToday = () => new Date().toISOString().split('T')[0];
 
-export const useSubscription = () => {
-  const context = useContext(SubscriptionContext);
-  if (!context) {
-    throw new Error('useSubscription must be used within a SubscriptionProvider');
-  }
-  return context;
-};
-
-export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
-  const [subscription, setSubscription] = useState<SubscriptionState>({
-    plan: 'Free',
-    scansToday: 0,
-    lastScanDate: null,
-  });
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  const refreshSubscription = useCallback(() => {
-    try {
-        const savedState = localStorage.getItem(SUBSCRIPTION_KEY);
-        if (savedState) {
-            const parsedState: SubscriptionState = JSON.parse(savedState);
-            const today = new Date().toISOString().split('T')[0];
-            
-            if (parsedState.lastScanDate !== today) {
-                parsedState.scansToday = 0;
-                parsedState.lastScanDate = today;
-            }
-            setSubscription(parsedState);
-        } else {
-            const today = new Date().toISOString().split('T')[0];
-            setSubscription({ plan: 'Free', scansToday: 0, lastScanDate: today });
-        }
-    } catch (error) {
-        console.error("Failed to load subscription state:", error);
-    } finally {
-      if (!isInitialized) {
-        setIsInitialized(true);
+// Create the Zustand store for usage tracking with persistence
+export const useUsageStore = create<UsageState>()(
+  persist(
+    (set, get) => ({
+      scansToday: 0,
+      lastScanDate: null,
+      recordScan: () => {
+        const { scansToday, lastScanDate } = get();
+        const today = getToday();
+        const newScans = lastScanDate === today ? scansToday + 1 : 1;
+        set({ scansToday: newScans, lastScanDate: today });
+      },
+      resetScans: () => {
+         set({ scansToday: 0, lastScanDate: getToday() });
       }
+    }),
+    {
+      name: 'usage-storage', // Name of the item in storage
+      storage: createJSONStorage(() => localStorage), // Use localStorage
     }
-  }, [isInitialized]);
-  
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      refreshSubscription();
-    }
-  }, [refreshSubscription]);
-
-  useEffect(() => {
-    if (isInitialized) {
-      try {
-          localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription));
-      } catch (error) {
-          console.error("Failed to save subscription state:", error);
-      }
-    }
-  }, [subscription, isInitialized]);
-
-
-  const setPlan = useCallback((newPlan: SubscriptionPlan) => {
-    setSubscription(prev => ({ ...prev, plan: newPlan, scansToday: 0 }));
-  }, []);
-
-  const recordScan = useCallback(() => {
-    setSubscription(prev => {
-        const today = new Date().toISOString().split('T')[0];
-        const scansToday = prev.lastScanDate === today ? prev.scansToday + 1 : 1;
-        return {
-            ...prev,
-            scansToday,
-            lastScanDate: today,
-        };
-    });
-  }, []);
-  
-  const canScan = useCallback((): ScanStatus => {
-    if (subscription.plan === 'Premium') {
-        return 'can_scan_free';
-    }
-    if (subscription.scansToday < FREE_SCAN_LIMIT) {
-        return 'can_scan_free';
-    }
-    if (subscription.scansToday < REWARDED_SCAN_LIMIT) {
-        return 'can_scan_with_ad';
-    }
-    return 'limit_reached';
-  }, [subscription.plan, subscription.scansToday]);
-
-  const value = {
-    subscription: { 
-        ...subscription, 
-        freeScanLimit: FREE_SCAN_LIMIT,
-        rewardedScanLimit: REWARDED_SCAN_LIMIT,
-        premiumScanLimit: PREMIUM_SCAN_LIMIT,
-    },
-    setPlan,
-    recordScan,
-    canScan,
-    isInitialized,
-    refreshSubscription,
-  };
-
-  return (
-    <SubscriptionContext.Provider value={value}>
-      {children}
-    </SubscriptionContext.Provider>
-  );
-}
+  )
+);

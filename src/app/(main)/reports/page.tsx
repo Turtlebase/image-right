@@ -8,13 +8,11 @@ import RiskBadge from '@/components/shared/risk-badge';
 import { getScanHistory, type ScanHistoryItem } from '@/lib/history';
 import { FileSearch, Loader2, ImageOff, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useUsage } from '@/hooks/useUsage';
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<ScanHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { isInitialized } = useUsage();
 
   useEffect(() => {
     // History is loaded only on the client-side
@@ -28,10 +26,8 @@ export default function ReportsPage() {
         setLoading(false);
       }
     }
-    if (isInitialized) {
-        fetchHistory();
-    }
-  }, [isInitialized]);
+    fetchHistory();
+  }, []);
 
   const handleReportClick = (report: ScanHistoryItem) => {
     // Pass the full report object via query params
@@ -40,7 +36,7 @@ export default function ReportsPage() {
   };
 
 
-  if (loading || !isInitialized) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
