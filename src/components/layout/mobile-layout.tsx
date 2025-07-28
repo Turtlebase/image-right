@@ -12,6 +12,7 @@ import { useTelegram } from '../telegram-provider';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Star } from 'lucide-react';
 import AppLogo from '../shared/logo';
+import AdsterraBanner from '../ads/adsterra-banner';
 
 // This function will be defined globally by the Monetag script
 declare function show_9631988(options?: any): Promise<void>;
@@ -89,7 +90,11 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
           {user && <UserProfile user={user} />}
       </header>
 
-      <main className="flex-1 overflow-y-auto pt-4 pb-20">{children}</main>
+      <main className="flex-1 overflow-y-auto pt-4 pb-[140px]">{children}</main>
+
+      <div className="fixed bottom-20 left-0 right-0 max-w-md mx-auto flex justify-center px-4">
+        <AdsterraBanner />
+      </div>
 
       <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-20 px-4 pb-4">
         <div className="bg-background/80 backdrop-blur-lg border border-border rounded-2xl flex items-center justify-around h-full shadow-lg">
