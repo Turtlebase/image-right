@@ -5,47 +5,59 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export default function RewardedAdOverlay() {
-    const { isVisible, hideRewardedAd, callbacks, setAdLoading } = useRewardedAd();
-    const [countdown, setCountdown] = useState(15);
-    const [rewardEarned, setRewardEarned] = useState(false);
-    
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+const POP_UNDER_SRC = '//jigsawharmony.com/f7/9b/bc/f79bbcd6e7e077e257ba8026279afdac.js';
+const COUNTDOWN_SECONDS = 15;
+
+// A reusable component to handle loading of individual ad scripts
+const AdBanner = ({ adKey, adFormat, height, width, params = {}, id, className }: { adKey: string, adFormat: string, height: number, width: number, params?: object, id?: string, className?: string }) => {
     const adContainerRef = useRef<HTMLDivElement>(null);
 
-    const SOCIAL_BAR_SRC = '//jigsawharmony.com/be/08/4b/be084ba313cde54505eaf796241204e7.js';
-    const POP_UNDER_SRC = '//jigsawharmony.com/f7/9b/bc/f79bbcd6e7e077e257ba8026279afdac.js';
-    const COUNTDOWN_SECONDS = 15;
-    
-    const cleanupScripts = () => {
-        const adsterraScripts = document.querySelectorAll('script[src*="jigsawharmony.com"]');
-        adsterraScripts.forEach(script => script.remove());
-        
-        const adsterraDivs = document.querySelectorAll('div[style*="z-index: 2147483647"]');
-        adsterraDivs.forEach(div => div.remove());
-
-        if (adContainerRef.current) {
-            const socialBarPlaceholder = adContainerRef.current.querySelector('#social-bar-ad');
-            if (socialBarPlaceholder) {
-                socialBarPlaceholder.innerHTML = '';
-            }
-        }
-    };
-
-    const loadSocialBarAd = () => {
+    useEffect(() => {
         if (!adContainerRef.current) return;
         
-        const placeholder = adContainerRef.current.querySelector('#social-bar-ad');
-        if(!placeholder) return;
+        const container = adContainerRef.current;
+        // Clear any previous ad content
+        container.innerHTML = '';
 
         const script = document.createElement('script');
         script.type = 'text/javascript';
-        script.src = SOCIAL_BAR_SRC;
-        script.async = true;
+        
+        const adOptions = { key: adKey, format: adFormat, height, width, params };
+        script.innerHTML = `atOptions = ${JSON.stringify(adOptions)};`;
+        
+        const invokeScript = document.createElement('script');
+        invokeScript.type = 'text/javascript';
+        invokeScript.src = `//jigsawharmony.com/${adKey}/invoke.js`;
 
-        placeholder.appendChild(script);
-    };
+        container.appendChild(script);
+        container.appendChild(invokeScript);
+        
+        if (id) {
+           const nativeContainer = document.createElement('div');
+           nativeContainer.id = id;
+           container.appendChild(nativeContainer);
+        }
+
+        return () => {
+            // Cleanup on component unmount
+            if (container) {
+                container.innerHTML = '';
+            }
+        };
+    }, [adKey, adFormat, height, width, params, id]);
+
+    return <div ref={adContainerRef} className={cn("flex justify-center items-center", className)}></div>;
+};
+
+
+export default function RewardedAdOverlay() {
+    const { isVisible, hideRewardedAd, callbacks, setAdLoading } = useRewardedAd();
+    const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+    const [rewardEarned, setRewardEarned] = useState(false);
+    
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
     const triggerPopUnder = () => {
         const script = document.createElement('script');
@@ -53,11 +65,9 @@ export default function RewardedAdOverlay() {
         script.src = POP_UNDER_SRC;
         script.async = true;
         document.body.appendChild(script);
-
         // The script removes itself, but we can clean up just in case
         setTimeout(() => script.remove(), 5000);
     };
-
 
     const closeAd = (isRewarded: boolean) => {
         if (intervalRef.current) {
@@ -69,11 +79,8 @@ export default function RewardedAdOverlay() {
         } else {
             callbacks?.onError?.();
         }
-        
-        cleanupScripts();
         hideRewardedAd();
     };
-
 
     useEffect(() => {
         if (isVisible) {
@@ -81,10 +88,8 @@ export default function RewardedAdOverlay() {
             setRewardEarned(false);
             setAdLoading(true);
             
-            setTimeout(() => {
-                loadSocialBarAd();
-                setAdLoading(false);
-            }, 500);
+            // Give a moment for the UI to render before setting loading to false
+            const adLoadTimer = setTimeout(() => setAdLoading(false), 500);
 
             intervalRef.current = setInterval(() => {
                 setCountdown(prev => {
@@ -96,14 +101,14 @@ export default function RewardedAdOverlay() {
                     return prev - 1;
                 });
             }, 1000);
-        }
 
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-            cleanupScripts();
-        };
+             return () => {
+                clearTimeout(adLoadTimer);
+                if (intervalRef.current) {
+                    clearInterval(intervalRef.current);
+                }
+            };
+        }
     }, [isVisible, setAdLoading]);
 
     if (!isVisible) {
@@ -115,12 +120,9 @@ export default function RewardedAdOverlay() {
     return (
         <div 
             className="fixed inset-0 bg-background z-[10000] flex justify-center items-center animate-in fade-in-50 duration-300"
-            ref={adContainerRef}
         >
-            <div 
-                className="bg-background text-card-foreground w-full h-full overflow-hidden flex flex-col"
-            >
-                <header className="p-4 border-b border-border flex justify-between items-center h-16 flex-shrink-0">
+            <div className="bg-background text-card-foreground w-full h-full overflow-y-auto flex flex-col">
+                <header className="p-4 border-b border-border flex justify-between items-center h-16 flex-shrink-0 sticky top-0 bg-background z-10">
                     <span className="text-sm font-medium text-muted-foreground">Rewarded Ad</span>
                      {rewardEarned ? (
                         <button 
@@ -136,38 +138,55 @@ export default function RewardedAdOverlay() {
                     )}
                 </header>
 
-                <main className="flex-grow flex flex-col items-center justify-center p-6 text-center">
-                     <div 
-                        id="social-bar-ad"
-                        className="w-full min-h-[120px] flex items-center justify-center bg-muted/50 rounded-lg mb-8 p-4 border border-dashed"
-                    >
-                        <p className="text-sm text-muted-foreground">Ad loading...</p>
-                    </div>
+                <main className="flex-grow flex flex-col items-center justify-around p-4 space-y-4">
                     
-                    <h2 className="text-xl font-bold mb-2">Special Offer Unlocked!</h2>
-                    <p className="text-muted-foreground mb-6">Click below to view our exclusive offer while you wait.</p>
+                    {/* 300x250 Banner Ad */}
+                    <AdBanner 
+                        adKey="4a438c82eba6d0eba9a94cc987ed87cb"
+                        adFormat="iframe"
+                        height={250}
+                        width={300}
+                        className="min-h-[250px] w-[300px]"
+                    />
 
-                    <Button onClick={triggerPopUnder} size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 h-auto text-base">
-                        View Special Offer
+                    {/* Call to Action Button */}
+                    <Button onClick={triggerPopUnder} size="lg" className="h-auto text-base py-3 px-6 rounded-full shadow-lg">
+                        Click Here to Continue
                     </Button>
+
+                    {/* 320x50 Banner Ad */}
+                    <AdBanner 
+                        adKey="6ca1d59b14717ee757eba9f85c3dc014"
+                        adFormat="iframe"
+                        height={50}
+                        width={320}
+                        className="min-h-[50px] w-[320px]"
+                    />
+
+                    {/* Native Ad Banner */}
+                    <AdBanner 
+                         adKey="70c52ea26480db13807224ac8a8adc70"
+                         adFormat="iframe" // format needs to be specified for the component, even for native
+                         height={250} // Placeholder height for layout
+                         width={300}  // Placeholder width for layout
+                         id="container-70c52ea26480db13807224ac8a8adc70"
+                         className="w-full max-w-[300px]"
+                    />
                 </main>
 
-                <footer className="p-4 flex-shrink-0">
+                <footer className="p-4 flex-shrink-0 sticky bottom-0 bg-background z-10 border-t">
                      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                         <div className="bg-primary h-full rounded-full" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }}></div>
                     </div>
-                    {!rewardEarned && (
-                        <p className="text-center text-xs text-muted-foreground mt-2">
-                            Please wait for the timer to finish to earn your reward.
-                        </p>
-                    )}
-                     {rewardEarned && (
-                        <p className="text-center text-xs text-green-500 font-semibold mt-2">
-                           Reward earned! You can now close this window.
-                        </p>
-                    )}
+                     <p className="text-center text-xs text-muted-foreground mt-2">
+                        {rewardEarned 
+                            ? "Reward earned! You can now close this window."
+                            : "Please wait for the timer to finish to earn your reward."
+                        }
+                    </p>
                 </footer>
             </div>
         </div>
     );
 }
+
