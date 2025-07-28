@@ -11,7 +11,7 @@ import { User, Globe, Download, Share2, Info, FileQuestion, Loader2, Copy, Lock,
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from 'next-themes';
-import { useUsage } from '@/hooks/useUsage';
+import { useUsageStore } from '@/hooks/useSubscription';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -25,12 +25,17 @@ interface ScanResultProps {
 
 export default function ScanResult({ data }: ScanResultProps): React.JSX.Element {
   const { toast } = useToast();
-  const { isInitialized } = useUsage();
+  const [isInitialized, setIsInitialized] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isShareSupported, setIsShareSupported] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const showRewardedAd = useRewardedAd(state => state.showRewardedAd);
+
+  useEffect(() => {
+    // Zustand's persistence is async, so we wait for rehydration
+    useUsageStore.persist.rehydrate().then(() => setIsInitialized(true));
+  }, []);
 
   useEffect(() => {
     if (typeof navigator.share !== 'undefined') {
