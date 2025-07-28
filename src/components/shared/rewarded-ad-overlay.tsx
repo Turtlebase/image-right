@@ -6,49 +6,40 @@ import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Script from 'next/script';
 
 const POP_UNDER_SRC = '//jigsawharmony.com/f7/9b/bc/f79bbcd6e7e077e257ba8026279afdac.js';
 const COUNTDOWN_SECONDS = 15;
 
 // A reusable component to handle loading of individual ad scripts
 const AdBanner = ({ adKey, adFormat, height, width, invokeUrl, params = {}, id, className }: { adKey: string, adFormat: string, height: number, width: number, invokeUrl: string, params?: object, id?: string, className?: string }) => {
-    const adContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!adContainerRef.current) return;
-        
-        const container = adContainerRef.current;
-        // Clear any previous ad content
-        container.innerHTML = '';
-
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        
-        const adOptions = { key: adKey, format: adFormat, height, width, params };
-        script.innerHTML = `atOptions = ${JSON.stringify(adOptions)};`;
-        
-        const invokeScript = document.createElement('script');
-        invokeScript.type = 'text/javascript';
-        invokeScript.src = invokeUrl;
-
-        container.appendChild(script);
-        container.appendChild(invokeScript);
-        
-        if (id) {
-           const nativeContainer = document.createElement('div');
-           nativeContainer.id = id;
-           container.appendChild(nativeContainer);
-        }
-
-        return () => {
-            // Cleanup on component unmount
-            if (container) {
-                container.innerHTML = '';
-            }
-        };
-    }, [adKey, adFormat, height, width, invokeUrl, params, id]);
-
-    return <div ref={adContainerRef} className={cn("flex justify-center items-center", className)}></div>;
+    // By giving the component a unique key each time it's rendered,
+    // we force React to unmount the old one and mount a new one, re-running the scripts.
+    return (
+        <div className={cn("flex justify-center items-center", className)}>
+            <Script
+                type="text/javascript"
+                strategy="afterInteractive"
+                dangerouslySetInnerHTML={{
+                  __html: `
+                    atOptions = {
+                        'key' : '${adKey}',
+                        'format' : '${adFormat}',
+                        'height' : ${height},
+                        'width' : ${width},
+                        'params' : ${JSON.stringify(params)}
+                    };
+                  `,
+                }}
+            />
+            <Script
+                type="text/javascript"
+                src={invokeUrl}
+                strategy="afterInteractive"
+            />
+             {id && <div id={id}></div>}
+        </div>
+    );
 };
 
 
@@ -56,6 +47,7 @@ export default function RewardedAdOverlay() {
     const { isVisible, hideRewardedAd, callbacks, setAdLoading } = useRewardedAd();
     const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
     const [rewardEarned, setRewardEarned] = useState(false);
+    const [adRenderKey, setAdRenderKey] = useState(0);
     
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -65,8 +57,11 @@ export default function RewardedAdOverlay() {
         script.src = POP_UNDER_SRC;
         script.async = true;
         document.body.appendChild(script);
-        // The script removes itself, but we can clean up just in case
-        setTimeout(() => script.remove(), 5000);
+        setTimeout(() => {
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
+        }, 5000);
     };
 
     const closeAd = (isRewarded: boolean) => {
@@ -84,11 +79,12 @@ export default function RewardedAdOverlay() {
 
     useEffect(() => {
         if (isVisible) {
+            // By changing the key, we force all AdBanner components to re-mount
+            setAdRenderKey(prev => prev + 1);
             setCountdown(COUNTDOWN_SECONDS);
             setRewardEarned(false);
             setAdLoading(true);
             
-            // Give a moment for the UI to render before setting loading to false
             const adLoadTimer = setTimeout(() => setAdLoading(false), 500);
 
             intervalRef.current = setInterval(() => {
@@ -141,7 +137,8 @@ export default function RewardedAdOverlay() {
                 <main className="flex-grow flex flex-col items-center justify-around p-4 space-y-4">
                     
                     {/* 300x250 Banner Ad */}
-                    <AdBanner 
+                    <AdBanner
+                        key={`ad1-${adRenderKey}`}
                         adKey="4a438c82eba6d0eba9a94cc987ed87cb"
                         invokeUrl="//jigsawharmony.com/4a438c82eba6d0eba9a94cc987ed87cb/invoke.js"
                         adFormat="iframe"
@@ -156,7 +153,8 @@ export default function RewardedAdOverlay() {
                     </Button>
 
                     {/* 320x50 Banner Ad */}
-                    <AdBanner 
+                    <AdBanner
+                        key={`ad2-${adRenderKey}`}
                         adKey="6ca1d59b14717ee757eba9f85c3dc014"
                         invokeUrl="//jigsawharmony.com/6ca1d59b14717ee757eba9f85c3dc014/invoke.js"
                         adFormat="iframe"
@@ -166,7 +164,8 @@ export default function RewardedAdOverlay() {
                     />
 
                     {/* Native Ad Banner */}
-                    <AdBanner 
+                    <AdBanner
+                        key={`ad3-${adRenderKey}`}
                          adKey="70c52ea26480db13807224ac8a8adc70"
                          invokeUrl="//jigsawharmony.com/70c52ea26480db13807224ac8a8adc70/invoke.js"
                          adFormat="iframe" // format needs to be specified for the component, even for native
