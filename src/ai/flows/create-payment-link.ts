@@ -9,7 +9,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { defineFlow } from 'genkit';
 import Razorpay from 'razorpay';
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -17,12 +16,6 @@ if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     'RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not set. Please set it in your .env file to use payment features.'
   );
 }
-
-const instance = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
-
 
 const CreatePaymentLinkInputSchema = z.object({
   planId: z.string().describe("The ID of the Razorpay subscription plan."),
@@ -40,14 +33,18 @@ export async function createPaymentLink(input: CreatePaymentLinkInput): Promise<
   return createPaymentLinkFlow(input);
 }
 
-
-export const createPaymentLinkFlow = defineFlow(
+export const createPaymentLinkFlow = ai.flow(
   {
     name: 'createPaymentLinkFlow',
     inputSchema: CreatePaymentLinkInputSchema,
     outputSchema: CreatePaymentLinkOutputSchema,
   },
   async (input) => {
+    const instance = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID!,
+        key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+      
     try {
       const result = await instance.subscriptionLink.create({
         plan_id: input.planId,
