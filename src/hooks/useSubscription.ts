@@ -27,6 +27,8 @@ interface SubscriptionContextType {
   setPlan: (plan: SubscriptionPlan) => void;
   recordScan: () => void;
   canScan: () => ScanStatus;
+  isInitialized: boolean;
+  refreshSubscription: () => void;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
@@ -45,8 +47,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     scansToday: 0,
     lastScanDate: null,
   });
-  
-  useEffect(() => {
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const refreshSubscription = useCallback(() => {
     try {
         const savedState = localStorage.getItem(SUBSCRIPTION_KEY);
         if (savedState) {
@@ -64,16 +67,28 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         }
     } catch (error) {
         console.error("Failed to load subscription state:", error);
+    } finally {
+      if (!isInitialized) {
+        setIsInitialized(true);
+      }
     }
-  }, []);
+  }, [isInitialized]);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      refreshSubscription();
+    }
+  }, [refreshSubscription]);
 
   useEffect(() => {
-    try {
-        localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription));
-    } catch (error) {
-        console.error("Failed to save subscription state:", error);
+    if (isInitialized) {
+      try {
+          localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subscription));
+      } catch (error) {
+          console.error("Failed to save subscription state:", error);
+      }
     }
-  }, [subscription]);
+  }, [subscription, isInitialized]);
 
 
   const setPlan = useCallback((newPlan: SubscriptionPlan) => {
@@ -115,6 +130,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setPlan,
     recordScan,
     canScan,
+    isInitialized,
+    refreshSubscription,
   };
 
   return (

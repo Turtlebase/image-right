@@ -10,7 +10,9 @@ import { MenuSheet } from './menu-sheet';
 import UserProfile from './user-profile';
 import { useTelegram } from '../telegram-provider';
 import AppLogo from '../shared/logo';
-import ShufflingBannerAd from '../shared/shuffling-banner-ad';
+import dynamic from 'next/dynamic';
+
+const ShufflingBannerAd = dynamic(() => import('../shared/shuffling-banner-ad'), { ssr: false });
 
 
 const navItems = [

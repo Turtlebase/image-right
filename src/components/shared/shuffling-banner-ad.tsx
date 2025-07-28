@@ -22,10 +22,8 @@ const AdBanner = ({ adKey }: { adKey: string }) => {
 
 export default function ShufflingBannerAd() {
     const [adKey, setAdKey] = useState(`ad-${Date.now()}`);
-    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        setIsMounted(true);
         const interval = setInterval(() => {
             setAdKey(`ad-${Date.now()}`);
         }, 30000); // 30 seconds
@@ -33,11 +31,11 @@ export default function ShufflingBannerAd() {
         return () => clearInterval(interval);
     }, []);
 
-    // Render an empty div with the same class names on the server and during initial client render.
-    // This ensures the DOM structure matches between server and client to avoid hydration errors.
+    // The entire component is now client-side only due to dynamic import,
+    // so we no longer need the isMounted check.
     return (
         <div className="flex justify-center items-center h-[50px] bg-background">
-            {isMounted && <AdBanner key={adKey} adKey={adKey} />}
+            <AdBanner key={adKey} adKey={adKey} />
         </div>
     );
 }

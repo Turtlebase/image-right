@@ -11,7 +11,7 @@ import { User, Globe, Download, Share2, Info, FileQuestion, Loader2, Copy, Lock,
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from 'next-themes';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useUsage } from '@/hooks/useUsage';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -25,7 +25,7 @@ interface ScanResultProps {
 
 export default function ScanResult({ data }: ScanResultProps): React.JSX.Element {
   const { toast } = useToast();
-  const { isInitialized } = useSubscription();
+  const { isInitialized } = useUsage();
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isShareSupported, setIsShareSupported] = useState(false);

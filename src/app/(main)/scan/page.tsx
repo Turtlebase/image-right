@@ -9,7 +9,7 @@ import { Loader2, ArrowLeft, ShieldAlert, Tv } from 'lucide-react';
 import { analyzeImageCopyright } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
 import { addScanToHistory } from '@/lib/history';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useUsage } from '@/hooks/useUsage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 
@@ -19,7 +19,7 @@ export default function ScanPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResultData | null>(null);
   const { toast } = useToast();
-  const { subscription, recordScan, canScan, isInitialized } = useSubscription();
+  const { usage, recordScan, canScan, isInitialized } = useUsage();
   const showRewardedAd = useRewardedAd(state => state.showRewardedAd);
   const isAdLoading = useRewardedAd(state => state.isAdLoading);
 
@@ -178,10 +178,10 @@ export default function ScanPage() {
     }
   }
 
-  const scansLeft = subscription.rewardedScanLimit - subscription.scansToday;
+  const scansLeft = usage.rewardedScanLimit - usage.scansToday;
   
   const scansLeftText = scanStatus === 'can_scan_free' 
-    ? `${subscription.freeScanLimit - subscription.scansToday} free scans remaining`
+    ? `${usage.freeScanLimit - usage.scansToday} free scans remaining`
     : `${scansLeft} rewarded scans remaining`;
 
 
@@ -199,7 +199,7 @@ export default function ScanPage() {
             </CardHeader>
             <CardContent className="p-0 pt-4">
               <p className="text-destructive/90 mb-4">
-                You've used all your {subscription.rewardedScanLimit} available scans for today. Please come back tomorrow.
+                You've used all your {usage.rewardedScanLimit} available scans for today. Please come back tomorrow.
               </p>
             </CardContent>
           </Card>

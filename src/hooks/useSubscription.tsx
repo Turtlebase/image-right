@@ -1,132 +1,60 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
-const FREE_SCAN_LIMIT = 5;
-const REWARDED_SCAN_LIMIT = 30; // 5 free + 25 rewarded
+// Define the shape of your subscription state
+interface SubscriptionState {
+  plan: 'Free' | 'Premium';
+  setPlan: (plan: 'Free' | 'Premium') => void;
+}
 
-const USAGE_KEY = 'image-rights-ai-usage';
+// Create the Zustand store with persistence
+export const useSubscriptionStore = create<SubscriptionState>()(
+  persist(
+    (set) => ({
+      plan: 'Free', // Default plan
+      setPlan: (plan) => set({ plan }),
+    }),
+    {
+      name: 'subscription-storage', // Name of the item in storage
+      storage: createJSONStorage(() => localStorage), // Use localStorage
+    }
+  )
+);
 
-export type ScanStatus = 'can_scan_free' | 'can_scan_with_ad' | 'limit_reached';
 
+// Define the shape of your usage state
 interface UsageState {
   scansToday: number;
   lastScanDate: string | null;
-}
-
-interface SubscriptionContextType {
-  subscription: UsageState & { 
-    freeScanLimit: number;
-    rewardedScanLimit: number;
-  };
   recordScan: () => void;
-  canScan: () => ScanStatus;
-  isInitialized: boolean;
-  refreshSubscription: () => void;
+  resetScans: () => void;
 }
 
-const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
+// Helper to get today's date string
+const getToday = () => new Date().toISOString().split('T')[0];
 
-export const useSubscription = () => {
-  const context = useContext(SubscriptionContext);
-  if (!context) {
-    throw new Error('useSubscription must be used within a SubscriptionProvider');
-  }
-  return context;
-};
-
-export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
-  const [usage, setUsage] = useState<UsageState>({
-    scansToday: 0,
-    lastScanDate: null,
-  });
-  const [isInitialized, setIsInitialized] = useState(false);
-  
-  const loadState = useCallback(() => {
-    try {
-        const savedState = localStorage.getItem(USAGE_KEY);
-        const today = new Date().toISOString().split('T')[0];
-        let initialState: UsageState;
-
-        if (savedState) {
-            const parsedState: UsageState = JSON.parse(savedState);
-            if (parsedState.lastScanDate !== today) {
-                initialState = { ...parsedState, scansToday: 0, lastScanDate: today };
-            } else {
-                initialState = parsedState;
-            }
-        } else {
-            initialState = { scansToday: 0, lastScanDate: today };
-        }
-        setUsage(initialState);
-    } catch (error) {
-        console.error("Failed to load usage state:", error);
-        const today = new Date().toISOString().split('T')[0];
-        setUsage({ scansToday: 0, lastScanDate: today });
-    } finally {
-        if (!isInitialized) {
-            setIsInitialized(true);
-        }
+// Create the Zustand store for usage tracking with persistence
+export const useUsageStore = create<UsageState>()(
+  persist(
+    (set, get) => ({
+      scansToday: 0,
+      lastScanDate: null,
+      recordScan: () => {
+        const { scansToday, lastScanDate } = get();
+        const today = getToday();
+        const newScans = lastScanDate === today ? scansToday + 1 : 1;
+        set({ scansToday: newScans, lastScanDate: today });
+      },
+      resetScans: () => {
+         set({ scansToday: 0, lastScanDate: getToday() });
+      }
+    }),
+    {
+      name: 'usage-storage', // Name of the item in storage
+      storage: createJSONStorage(() => localStorage), // Use localStorage
     }
-  }, [isInitialized]);
-
-  useEffect(() => {
-    loadState();
-  }, [loadState]);
-
-  const refreshSubscription = useCallback(() => {
-    loadState();
-  }, [loadState]);
-
-
-  useEffect(() => {
-    if (isInitialized) {
-        try {
-            localStorage.setItem(USAGE_KEY, JSON.stringify(usage));
-        } catch (error) {
-            console.error("Failed to save usage state:", error);
-        }
-    }
-  }, [usage, isInitialized]);
-
-  const recordScan = useCallback(() => {
-    setUsage(prev => {
-        const today = new Date().toISOString().split('T')[0];
-        const scansToday = prev.lastScanDate === today ? prev.scansToday + 1 : 1;
-        return {
-            ...prev,
-            scansToday,
-            lastScanDate: today,
-        };
-    });
-  }, []);
-  
-  const canScan = useCallback((): ScanStatus => {
-    if (usage.scansToday < FREE_SCAN_LIMIT) {
-        return 'can_scan_free';
-    }
-    if (usage.scansToday < REWARDED_SCAN_LIMIT) {
-        return 'can_scan_with_ad';
-    }
-    return 'limit_reached';
-  }, [usage.scansToday]);
-
-  const value = {
-    subscription: { 
-        ...usage, 
-        freeScanLimit: FREE_SCAN_LIMIT,
-        rewardedScanLimit: REWARDED_SCAN_LIMIT,
-    },
-    recordScan,
-    canScan,
-    isInitialized,
-    refreshSubscription,
-  };
-
-  return (
-    <SubscriptionContext.Provider value={value}>
-      {children}
-    </SubscriptionContext.Provider>
-  );
-}
+  )
+);

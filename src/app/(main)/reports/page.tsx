@@ -8,13 +8,13 @@ import RiskBadge from '@/components/shared/risk-badge';
 import { getScanHistory, type ScanHistoryItem } from '@/lib/history';
 import { FileSearch, Loader2, ImageOff, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useUsage } from '@/hooks/useUsage';
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<ScanHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { isInitialized } = useSubscription();
+  const { isInitialized } = useUsage();
 
   useEffect(() => {
     // History is loaded only on the client-side

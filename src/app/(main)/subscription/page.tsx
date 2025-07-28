@@ -43,7 +43,7 @@ interface RazorpayConfig {
 }
 
 export default function SubscriptionPage() {
-    const { subscription, isInitialized, refreshSubscription } = useSubscription();
+    const { subscription, isInitialized, refreshSubscription, setPlan } = useSubscription();
     const { user, webApp } = useTelegram();
     const { toast } = useToast();
     const router = useRouter();
@@ -122,7 +122,7 @@ export default function SubscriptionPage() {
     
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        await refreshSubscription();
+        refreshSubscription();
         await new Promise(res => setTimeout(res, 500));
         setIsRefreshing(false);
         toast({
@@ -140,6 +140,8 @@ export default function SubscriptionPage() {
             </div>
         );
     }
+    
+    const currentPlan = subscription.plan === 'Premium' ? plans.Premium : plans.Free;
 
     return (
         <div className="p-4 animate-in fade-in-50 duration-500">
@@ -149,8 +151,8 @@ export default function SubscriptionPage() {
             </div>
 
             <div className="space-y-6">
-                {Object.values(plans).map((plan) => (
-                    <Card key={plan.name} className={subscription.plan === plan.name ? 'border-primary ring-2 ring-primary shadow-lg' : ''}>
+                {[plans.Free, plans.Premium].map((plan) => (
+                    <Card key={plan.name} className={currentPlan.name === plan.name ? 'border-primary ring-2 ring-primary shadow-lg' : ''}>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 {plan.name === 'Premium' && <Star className="h-6 w-6 text-yellow-400" />}
@@ -167,12 +169,12 @@ export default function SubscriptionPage() {
                             ))}
                         </CardContent>
                         <CardFooter>
-                             {subscription.plan === plan.name ? (
+                             {currentPlan.name === plan.name ? (
                                 <Button disabled className="w-full">Current Plan</Button>
                             ) : (
                                 <Button onClick={handleUpgrade} className="w-full" disabled={isLoading || !config || plan.name === 'Free'}>
                                     {isLoading && plan.name === 'Premium' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {plan.name === 'Free' ? 'Current Plan' : 'Upgrade to Premium'}
+                                    {plan.name === 'Free' ? 'Your Current Plan' : 'Upgrade to Premium'}
                                 </Button>
                             )}
                         </CardFooter>
