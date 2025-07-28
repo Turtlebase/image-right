@@ -124,6 +124,17 @@ export default function RewardedAdOverlay() {
 
                 <main className="flex-grow flex flex-col items-center justify-around p-4 space-y-4">
                     
+                    {/* Native Ad Banner - Requires slightly different handling for the container div */}
+                     <div key={`ad3-container-${adRenderKey}`} className="w-full max-w-[300px]">
+                        <script async={true} data-cfasync="false" src="//jigsawharmony.com/70c52ea26480db13807224ac8a8adc70/invoke.js"></script>
+                        <div id="container-70c52ea26480db13807224ac8a8adc70"></div>
+                    </div>
+
+                    {/* Call to Action Button */}
+                    <Button onClick={triggerPopUnder} size="lg" className="h-auto text-base py-3 px-6 rounded-full shadow-lg">
+                        Click Here to Continue
+                    </Button>
+
                     {/* 300x250 Banner Ad */}
                     <AdBanner
                         key={`ad1-${adRenderKey}`}
@@ -134,11 +145,6 @@ export default function RewardedAdOverlay() {
                         width={300}
                         className="min-h-[250px] w-[300px]"
                     />
-
-                    {/* Call to Action Button */}
-                    <Button onClick={triggerPopUnder} size="lg" className="h-auto text-base py-3 px-6 rounded-full shadow-lg">
-                        Click Here to Continue
-                    </Button>
 
                     {/* 320x50 Banner Ad */}
                     <AdBanner
@@ -151,11 +157,6 @@ export default function RewardedAdOverlay() {
                         className="min-h-[50px] w-[320px]"
                     />
                     
-                    {/* Native Ad Banner - Requires slightly different handling for the container div */}
-                     <div key={`ad3-container-${adRenderKey}`} className="w-full max-w-[300px]">
-                        <script async={true} data-cfasync="false" src="//jigsawharmony.com/70c52ea26480db13807224ac8a8adc70/invoke.js"></script>
-                        <div id="container-70c52ea26480db13807224ac8a8adc70"></div>
-                    </div>
                 </main>
 
                 <footer className="p-4 flex-shrink-0 sticky bottom-0 bg-background z-10 border-t">
