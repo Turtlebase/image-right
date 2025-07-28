@@ -11,7 +11,6 @@ export async function POST(req: NextRequest) {
 
   if (!WEBHOOK_SECRET) {
     console.error('RAZORPAY_WEBHOOK_SECRET is not set. Cannot verify webhook.');
-    // In a production environment, you must have a secret for security.
     return NextResponse.json({ status: 'error', message: 'Webhook secret not configured' }, { status: 500 });
   }
   
@@ -49,19 +48,15 @@ export async function POST(req: NextRequest) {
     console.log('Webhook Event:', event.event);
     console.log('Webhook Payload:', event.payload);
 
-    if (event.event === 'subscription.activated') {
+    if (event.event === 'subscription.charged') {
       const subscriptionEntity = event.payload.subscription.entity;
       const userTelegramId = subscriptionEntity.notes?.telegram_user_id;
 
       if (userTelegramId) {
-        console.log(`Subscription activated for Telegram user: ${userTelegramId}`);
-        //
-        // --- YOUR DATABASE LOGIC GOES HERE ---
-        // 1. Find the user in your database using userTelegramId.
-        // 2. Mark their 'plan' as 'Premium'.
-        // 3. Save their 'subscriptionId' from Razorpay.
-        // 4. Set a 'premiumUntil' date.
-        //
+        console.log(`Subscription payment successful for Telegram user: ${userTelegramId}`);
+        // Here you would typically update a database to mark the user as premium.
+        // Since this is a client-side app, this webhook serves as a server-side confirmation log.
+        // The client-side will handle its own state.
       } else {
         console.warn('No telegram_user_id found in subscription notes.');
       }

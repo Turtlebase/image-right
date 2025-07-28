@@ -29,6 +29,7 @@ interface SubscriptionContextType {
   recordScan: () => void;
   canScan: () => ScanStatus;
   isInitialized: boolean;
+  refreshSubscription: () => void;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
@@ -49,7 +50,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   });
   const [isInitialized, setIsInitialized] = useState(false);
   
-  useEffect(() => {
+  const loadState = useCallback(() => {
     try {
         const savedState = localStorage.getItem(SUBSCRIPTION_KEY);
         const today = new Date().toISOString().split('T')[0];
@@ -74,9 +75,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         const today = new Date().toISOString().split('T')[0];
         setSubscription({ plan: 'Free', scansToday: 0, lastScanDate: today });
     } finally {
-        setIsInitialized(true);
+        if (!isInitialized) {
+            setIsInitialized(true);
+        }
     }
+  }, [isInitialized]);
+
+  useEffect(() => {
+    loadState();
   }, []);
+
+  const refreshSubscription = useCallback(() => {
+    loadState();
+  }, [loadState]);
+
 
   useEffect(() => {
     // Only save to localStorage if state has been initialized from it first
@@ -131,6 +143,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     recordScan,
     canScan,
     isInitialized,
+    refreshSubscription,
   };
 
   return (

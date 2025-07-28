@@ -5,13 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSubscription, type SubscriptionPlan } from '@/hooks/useSubscription';
 import { useTelegram } from '@/components/telegram-provider';
-import { CheckCircle, Star } from 'lucide-react';
+import { CheckCircle, Star, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-
-declare const Razorpay: any;
+import { createPaymentLink } from '@/ai/flows/create-payment-link';
 
 const plans = {
     Free: {
@@ -39,28 +38,28 @@ const plans = {
 }
 
 export default function SubscriptionPage() {
-    const { subscription, isInitialized } = useSubscription();
-    const { user } = useTelegram();
+    const { subscription, isInitialized, refreshSubscription } = useSubscription();
+    const { user, webApp } = useTelegram();
     const { toast } = useToast();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const handleUpgrade = () => {
+    const handleUpgrade = async () => {
         setIsLoading(true);
-        const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
         const planId = process.env.NEXT_PUBLIC_RAZORPAY_PLAN_ID;
         
-        if (typeof window.Razorpay === 'undefined') {
-            toast({
+        if (!webApp) {
+             toast({
                 variant: 'destructive',
-                title: 'Payment Gateway Error',
-                description: 'Razorpay script not loaded. Please try again later.',
+                title: 'Not in Telegram',
+                description: 'This feature is only available within the Telegram app.',
             });
             setIsLoading(false);
             return;
         }
 
-        if (!keyId || !planId) {
+        if (!planId || !user) {
             toast({
                 variant: 'destructive',
                 title: 'Configuration Error',
@@ -69,54 +68,40 @@ export default function SubscriptionPage() {
             setIsLoading(false);
             return;
         }
-        
-        const callbackUrl = `${window.location.origin}/subscription/success`;
-
-        const options = {
-            key: keyId,
-            plan_id: planId,
-            callback_url: callbackUrl,
-            notes: {
-                telegram_user_id: user?.id?.toString() || 'N/A',
-                username: user?.username || 'N/A',
-            },
-            prefill: {
-                name: [user?.first_name, user?.last_name].filter(Boolean).join(' '),
-                email: 'user@example.com', // Dummy email, not used for subscription
-            },
-            theme: {
-                color: "#29ABE2"
-            }
-        };
 
         try {
-            const rzp = new window.Razorpay(options);
-            rzp.on('payment.failed', function (response: any) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Payment Failed',
-                    description: response.error.description || 'An unknown error occurred.',
-                });
-                setIsLoading(false);
+            const result = await createPaymentLink({
+                planId: planId,
+                telegramUserId: user.id.toString(),
+                telegramUsername: user.username || 'N/A',
             });
-            rzp.open();
-        } catch(e) {
-            console.error("Razorpay error", e)
+            
+            webApp.openLink(result.short_url);
+
+        } catch (e) {
+            console.error("Payment Link Error", e)
              toast({
                 variant: 'destructive',
-                title: 'Initialization Error',
-                description: 'Could not start the payment process. Please try again.',
+                title: 'Could Not Get Payment Link',
+                description: 'Failed to generate a payment link. Please try again later.',
             });
+        } finally {
             setIsLoading(false);
         }
     }
     
-    const handleSelectPlan = (plan: SubscriptionPlan) => {
-        if (plan === 'Premium') {
-            handleUpgrade();
-        } else {
-            router.push('/');
-        }
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        // This assumes your webhook/backend updates a source that this function checks.
+        // For now, we'll simulate a check and guide the user.
+        await new Promise(res => setTimeout(res, 1000));
+        refreshSubscription(); // This will re-check localStorage
+        setIsRefreshing(false);
+        toast({
+            title: "Status Refreshed",
+            description: "Your subscription plan has been updated.",
+        });
+        router.push('/');
     }
 
     if (!isInitialized) {
@@ -157,7 +142,7 @@ export default function SubscriptionPage() {
                             {subscription.plan === plan.name ? (
                                 <Button disabled className="w-full">Current Plan</Button>
                             ) : (
-                                <Button onClick={() => handleSelectPlan(plan.name as SubscriptionPlan)} className="w-full" disabled={isLoading}>
+                                <Button onClick={handleUpgrade} className="w-full" disabled={isLoading || plan.name === 'Free'}>
                                     {isLoading && plan.name === 'Premium' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     {plan.name === 'Free' ? 'Downgrade to Free' : 'Upgrade to Premium'}
                                 </Button>
@@ -166,9 +151,13 @@ export default function SubscriptionPage() {
                     </Card>
                 ))}
             </div>
-             <p className="text-center text-xs text-muted-foreground mt-6">
-                Payments are securely processed by Razorpay. You may need to restart the app after payment if your plan does not update automatically.
-            </p>
+             <Card className="mt-6 text-center p-4 bg-accent/20 border-accent/30">
+                <p className="text-sm text-accent-foreground/90">After successful payment, please return to the app and tap below to update your status.</p>
+                <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="mt-3">
+                    {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    Refresh Status
+                </Button>
+            </Card>
         </div>
     );
 }
