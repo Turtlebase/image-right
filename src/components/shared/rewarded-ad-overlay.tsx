@@ -20,19 +20,22 @@ export default function RewardedAdOverlay() {
     const COUNTDOWN_SECONDS = 15;
 
     const cleanupScripts = () => {
-        // Remove pop-under script
         if (popUnderScriptRef.current && popUnderScriptRef.current.parentNode) {
             popUnderScriptRef.current.parentNode.removeChild(popUnderScriptRef.current);
             popUnderScriptRef.current = null;
         }
-        // Remove social bar script and clear its container
         if (socialBarScriptRef.current && socialBarScriptRef.current.parentNode) {
             socialBarScriptRef.current.parentNode.removeChild(socialBarScriptRef.current);
             socialBarScriptRef.current = null;
         }
+        // This is a common pattern for these ad scripts; they inject a div at the end of the body.
+        const adsterraDiv = document.querySelector('div[id^="adsterra-"]');
+        if (adsterraDiv && adsterraDiv.parentNode) {
+            adsterraDiv.parentNode.removeChild(adsterraDiv);
+        }
         if (socialBarContainerRef.current) {
             socialBarContainerRef.current.innerHTML = `
-                <div class="ad-placeholder">
+                 <div class="ad-placeholder text-sm text-primary">
                     Social Bar Ad Loading...
                 </div>
             `;
@@ -46,12 +49,19 @@ export default function RewardedAdOverlay() {
         script.type = 'text/javascript';
         script.src = SOCIAL_BAR_SRC;
         script.async = true;
-        script.onload = () => console.log('Social bar ad loaded.');
-        script.onerror = () => console.error('Social bar ad failed to load.');
+        
+        script.onload = () => {
+            if (socialBarContainerRef.current) {
+                socialBarContainerRef.current.innerHTML = `<div class="ad-placeholder text-sm text-green-500">Ad loaded.</div>`;
+            }
+        };
+        script.onerror = () => {
+             if (socialBarContainerRef.current) {
+                socialBarContainerRef.current.innerHTML = `<div class="ad-placeholder text-sm text-red-500">Ad failed to load.</div>`;
+            }
+        };
 
-        // Append the script directly inside its container to try and scope it
-        socialBarContainerRef.current.innerHTML = ''; // Clear placeholder
-        socialBarContainerRef.current.appendChild(script);
+        document.body.appendChild(script);
         socialBarScriptRef.current = script;
     };
     
@@ -62,8 +72,6 @@ export default function RewardedAdOverlay() {
         script.type = 'text/javascript';
         script.src = POP_UNDER_SRC;
         script.async = true;
-        script.onload = () => console.log('Pop-under script loaded.');
-        script.onerror = () => console.error('Pop-under script failed to load.');
 
         document.body.appendChild(script);
         popUnderScriptRef.current = script;
@@ -115,7 +123,7 @@ export default function RewardedAdOverlay() {
             }
             cleanupScripts();
         };
-    }, [isVisible]);
+    }, [isVisible, setAdLoading]);
 
     if (!isVisible) {
         return null;
@@ -149,8 +157,7 @@ export default function RewardedAdOverlay() {
                 )}
 
                 <div className="p-5 text-center flex-grow flex flex-col justify-center">
-                    <div 
-                        id="socialBarContainer" 
+                     <div 
                         ref={socialBarContainerRef}
                         className="min-h-[100px] flex items-center justify-center bg-muted/50 rounded-lg mb-5 p-3"
                     >
