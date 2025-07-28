@@ -67,7 +67,7 @@ export default function SubscriptionPage() {
             quantity: 1,
             name: "ImageRights AI Premium",
             description: "Monthly Subscription",
-            callback_url: `${window.location.origin}/subscription`,
+            callback_url: `${window.location.origin}/subscription`, // Important for webview handling
             handler: function (response: any) {
                 toast({
                     title: 'Subscription Successful!',
@@ -87,17 +87,10 @@ export default function SubscriptionPage() {
                 color: "#29ABE2"
             },
             modal: {
-                escape: false,
+                escape: false, // Prevents closing on escape key, crucial for webviews
                 ondismiss: function() {
                     setIsLoading(false);
                 }
-            },
-            config: {
-                display: {
-                    hide: [
-                        { method: 'upi' }
-                    ],
-                },
             },
         };
         
