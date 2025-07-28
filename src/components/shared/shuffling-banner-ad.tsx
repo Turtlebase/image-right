@@ -1,7 +1,6 @@
 
 "use client";
 
-import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 const AdBanner = ({ adKey }: { adKey: string }) => {
@@ -23,14 +22,20 @@ const AdBanner = ({ adKey }: { adKey: string }) => {
 
 export default function ShufflingBannerAd() {
     const [adKey, setAdKey] = useState(`ad-${Date.now()}`);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         const interval = setInterval(() => {
             setAdKey(`ad-${Date.now()}`);
         }, 30000); // 30 seconds
 
         return () => clearInterval(interval);
     }, []);
+
+    if (!isMounted) {
+        return <div className="h-[50px] bg-background" />;
+    }
 
     return (
         <div className="flex justify-center items-center h-[50px] bg-background">
