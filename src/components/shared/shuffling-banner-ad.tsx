@@ -34,8 +34,7 @@ export default function ShufflingBannerAd() {
     }, []);
 
     if (!isMounted) {
-        // This placeholder now exactly matches the container below
-        return <div className="flex justify-center items-center h-[50px] bg-background" />;
+        return null;
     }
 
     return (
