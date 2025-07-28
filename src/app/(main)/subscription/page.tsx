@@ -11,6 +11,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
+// This makes TypeScript aware of the Razorpay object on the window
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
+
 const plans = {
     Free: {
         name: 'Free',
@@ -68,51 +75,59 @@ export default function SubscriptionPage() {
             setIsLoading(false);
             return;
         }
-
-        // The full URL to your app, needed for the callback.
+        
+        if (typeof window.Razorpay === 'undefined') {
+            toast({
+                variant: 'destructive',
+                title: 'Initialization Error',
+                description: 'Payment script could not load. Please check your connection and try again.',
+            });
+            setIsLoading(false);
+            return;
+        }
+        
         const appBaseUrl = window.location.origin;
         const callbackUrl = `${appBaseUrl}/subscription/success`;
 
-        // Construct the correct checkout URL for external opening.
-        const checkoutUrl = new URL('https://checkout.razorpay.com/v1/checkout.html');
-        checkoutUrl.searchParams.set('key', keyId);
-        // This is the key fix: Razorpay uses 'subscription_id' to create a new subscription from a 'plan_id'.
-        checkoutUrl.searchParams.set('subscription_id', planId); 
-        checkoutUrl.searchParams.set('callback_url', callbackUrl);
-        
-        // This is crucial for your webhook to link the payment to the user.
-        const notes = {
-            telegram_user_id: user.id.toString(),
-            username: user.username || '',
+        const options = {
+            key: keyId,
+            plan_id: planId,
+            callback_url: callbackUrl,
+            "prefill": {
+                "name": [user.first_name, user.last_name].filter(Boolean).join(' '),
+                "contact": "" // Optional: Prefill contact number if available
+            },
+            "notes": {
+                "telegram_user_id": user.id.toString(),
+                "username": user.username || '',
+            },
+            "theme": {
+                "color": "#29ABE2" // Use your primary color
+            }
         };
-        
-        // Razorpay expects notes as `notes[key]=value` in the URL.
-        Object.entries(notes).forEach(([key, value]) => {
-            checkoutUrl.searchParams.set(`notes[${key}]`, value);
-        });
 
         try {
-            // Use Telegram's openLink method for the best integration
-            if (webApp) {
-                 webApp.openLink(checkoutUrl.href);
-            } else {
-                // Fallback for regular browsers
-                window.open(checkoutUrl.href, '_blank');
-            }
-            
-            toast({
-                title: "Redirecting to Payment",
-                description: "Your browser will open to complete the payment. Please return to the app when you're done.",
+            const razorpay = new window.Razorpay(options);
+            razorpay.on('payment.failed', function (response: any) {
+                console.error("Razorpay payment failed:", response);
+                toast({
+                    variant: 'destructive',
+                    title: 'Payment Failed',
+                    description: response.error.description || 'An unknown error occurred.',
+                });
+                setIsLoading(false);
             });
-
+            
+            // This will open the Razorpay checkout.
+            razorpay.open();
+            
         } catch (error) {
-            console.error("Redirection error:", error);
+            console.error("Razorpay SDK error:", error);
             toast({
                 variant: 'destructive',
-                title: 'Redirection Error',
-                description: 'Could not open the payment page. Please check your browser settings.',
+                title: 'Checkout Error',
+                description: 'Could not initiate the payment process. Please try again.',
             });
-        } finally {
             setIsLoading(false);
         }
     }
