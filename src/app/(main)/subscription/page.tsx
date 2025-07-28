@@ -11,8 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
-declare const Razorpay: any;
-
 const plans = {
     Free: {
         name: 'Free',
@@ -61,49 +59,27 @@ export default function SubscriptionPage() {
             return;
         }
 
-        const options = {
-            key: keyId,
-            plan_id: planId,
-            quantity: 1,
-            name: "ImageRights AI Premium",
-            description: "Monthly Subscription",
-            callback_url: `${window.location.origin}/subscription`, // Important for webview handling
-            handler: function (response: any) {
-                toast({
-                    title: 'Subscription Successful!',
-                    description: 'Welcome to Premium!',
-                });
-                setPlan('Premium');
-                setIsLoading(false);
-                router.push('/');
-            },
-            prefill: {
-                name: user ? `${user.first_name} ${user.last_name || ''}`.trim() : '',
-            },
-            notes: {
-                telegram_user_id: user?.id,
-            },
-            theme: {
-                color: "#29ABE2"
-            },
-            modal: {
-                escape: false, // Prevents closing on escape key, crucial for webviews
-                ondismiss: function() {
-                    setIsLoading(false);
-                }
-            },
-        };
+        // Construct the Razorpay subscription URL to be opened in an external browser.
+        // This bypasses the Telegram Web App's limitations.
+        const razorpaySubscriptionUrl = `https://checkout.razorpay.com/v1/checkout.js?key=${keyId}&plan_id=${planId}&redirect=1`;
         
         try {
-            const rzp = new Razorpay(options);
-            rzp.open();
+            // Open the URL in an external browser.
+            window.open(razorpaySubscriptionUrl, '_blank');
+            
+            toast({
+                title: "Redirecting to Payment",
+                description: "Your browser has opened a new tab to complete the payment. Please return to the app when you're done.",
+            });
+
         } catch (error) {
-            console.error("Razorpay error:", error);
+            console.error("Redirection error:", error);
             toast({
                 variant: 'destructive',
-                title: 'Payment Error',
-                description: 'Could not initialize the payment gateway. Please try again.',
+                title: 'Redirection Error',
+                description: 'Could not open the payment page. Please check your browser settings.',
             });
+        } finally {
             setIsLoading(false);
         }
     }
