@@ -6,40 +6,54 @@ import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Script from 'next/script';
 
 const POP_UNDER_SRC = '//jigsawharmony.com/f7/9b/bc/f79bbcd6e7e077e257ba8026279afdac.js';
 const COUNTDOWN_SECONDS = 15;
 
-// A reusable component to handle loading of individual ad scripts
 const AdBanner = ({ adKey, adFormat, height, width, invokeUrl, params = {}, id, className }: { adKey: string, adFormat: string, height: number, width: number, invokeUrl: string, params?: object, id?: string, className?: string }) => {
-    // By giving the component a unique key each time it's rendered,
-    // we force React to unmount the old one and mount a new one, re-running the scripts.
-    return (
-        <div className={cn("flex justify-center items-center", className)}>
-            <Script
-                type="text/javascript"
-                strategy="afterInteractive"
-                dangerouslySetInnerHTML={{
-                  __html: `
-                    atOptions = {
-                        'key' : '${adKey}',
-                        'format' : '${adFormat}',
-                        'height' : ${height},
-                        'width' : ${width},
-                        'params' : ${JSON.stringify(params)}
-                    };
-                  `,
-                }}
-            />
-            <Script
-                type="text/javascript"
-                src={invokeUrl}
-                strategy="afterInteractive"
-            />
-             {id && <div id={id}></div>}
-        </div>
-    );
+    const adContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const container = adContainerRef.current;
+        if (!container) return;
+
+        // Clear previous ads
+        container.innerHTML = '';
+
+        const configScript = document.createElement('script');
+        configScript.type = 'text/javascript';
+        configScript.innerHTML = `
+            atOptions = {
+                'key' : '${adKey}',
+                'format' : '${adFormat}',
+                'height' : ${height},
+                'width' : ${width},
+                'params' : ${JSON.stringify(params)}
+            };
+        `;
+        container.appendChild(configScript);
+
+        const invokeScript = document.createElement('script');
+        invokeScript.type = 'text/javascript';
+        invokeScript.src = invokeUrl;
+        invokeScript.async = true;
+        container.appendChild(invokeScript);
+
+        if (id) {
+            const nativeDiv = document.createElement('div');
+            nativeDiv.id = id;
+            container.appendChild(nativeDiv);
+        }
+        
+        return () => {
+            if(container) {
+                container.innerHTML = '';
+            }
+        };
+
+    }, [adKey, adFormat, height, width, invokeUrl, params, id]);
+
+    return <div ref={adContainerRef} className={cn("flex justify-center items-center", className)}></div>;
 };
 
 
@@ -79,7 +93,7 @@ export default function RewardedAdOverlay() {
 
     useEffect(() => {
         if (isVisible) {
-            // By changing the key, we force all AdBanner components to re-mount
+            // By changing the key, we force all AdBanner components to re-mount and scripts to re-run
             setAdRenderKey(prev => prev + 1);
             setCountdown(COUNTDOWN_SECONDS);
             setRewardEarned(false);
