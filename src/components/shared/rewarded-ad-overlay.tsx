@@ -11,7 +11,7 @@ const POP_UNDER_SRC = '//jigsawharmony.com/f7/9b/bc/f79bbcd6e7e077e257ba8026279a
 const COUNTDOWN_SECONDS = 15;
 
 // A reusable component to handle loading of individual ad scripts
-const AdBanner = ({ adKey, adFormat, height, width, params = {}, id, className }: { adKey: string, adFormat: string, height: number, width: number, params?: object, id?: string, className?: string }) => {
+const AdBanner = ({ adKey, adFormat, height, width, invokeUrl, params = {}, id, className }: { adKey: string, adFormat: string, height: number, width: number, invokeUrl: string, params?: object, id?: string, className?: string }) => {
     const adContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -29,7 +29,7 @@ const AdBanner = ({ adKey, adFormat, height, width, params = {}, id, className }
         
         const invokeScript = document.createElement('script');
         invokeScript.type = 'text/javascript';
-        invokeScript.src = `//jigsawharmony.com/${adKey}/invoke.js`;
+        invokeScript.src = invokeUrl;
 
         container.appendChild(script);
         container.appendChild(invokeScript);
@@ -46,7 +46,7 @@ const AdBanner = ({ adKey, adFormat, height, width, params = {}, id, className }
                 container.innerHTML = '';
             }
         };
-    }, [adKey, adFormat, height, width, params, id]);
+    }, [adKey, adFormat, height, width, invokeUrl, params, id]);
 
     return <div ref={adContainerRef} className={cn("flex justify-center items-center", className)}></div>;
 };
@@ -143,6 +143,7 @@ export default function RewardedAdOverlay() {
                     {/* 300x250 Banner Ad */}
                     <AdBanner 
                         adKey="4a438c82eba6d0eba9a94cc987ed87cb"
+                        invokeUrl="//jigsawharmony.com/4a438c82eba6d0eba9a94cc987ed87cb/invoke.js"
                         adFormat="iframe"
                         height={250}
                         width={300}
@@ -157,6 +158,7 @@ export default function RewardedAdOverlay() {
                     {/* 320x50 Banner Ad */}
                     <AdBanner 
                         adKey="6ca1d59b14717ee757eba9f85c3dc014"
+                        invokeUrl="//jigsawharmony.com/6ca1d59b14717ee757eba9f85c3dc014/invoke.js"
                         adFormat="iframe"
                         height={50}
                         width={320}
@@ -166,6 +168,7 @@ export default function RewardedAdOverlay() {
                     {/* Native Ad Banner */}
                     <AdBanner 
                          adKey="70c52ea26480db13807224ac8a8adc70"
+                         invokeUrl="//jigsawharmony.com/70c52ea26480db13807224ac8a8adc70/invoke.js"
                          adFormat="iframe" // format needs to be specified for the component, even for native
                          height={250} // Placeholder height for layout
                          width={300}  // Placeholder width for layout
@@ -189,4 +192,3 @@ export default function RewardedAdOverlay() {
         </div>
     );
 }
-
