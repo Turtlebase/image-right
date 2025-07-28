@@ -9,7 +9,7 @@ import { Loader2, ArrowLeft, ShieldAlert, Tv } from 'lucide-react';
 import { analyzeImageCopyright } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
 import { addScanToHistory } from '@/lib/history';
-import { useSubscriptionStore, useUsageStore } from '@/hooks/useSubscription';
+import { useSubscriptionStore, useUsageStore } from '@/hooks/useSubscription.ts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 
@@ -35,7 +35,7 @@ export default function ScanPage() {
 
   useEffect(() => {
     // Zustand's persistence is async, so we wait for rehydration
-    useUsageStore.persist.rehydrate().then(() => setIsInitialized(true));
+    useSubscriptionStore.persist.rehydrate().then(() => setIsInitialized(true));
   }, []);
 
   useEffect(() => {
@@ -53,6 +53,21 @@ export default function ScanPage() {
     return 'limit_reached';
   }, [plan, scansToday]);
 
+  const scansLeftText = useMemo(() => {
+    if (plan === 'Premium') return "You have unlimited scans";
+    if (scanStatus === 'can_scan_free') return `${FREE_SCAN_LIMIT - scansToday} free scans remaining`;
+    if (scanStatus === 'can_scan_with_ad') return `${REWARDED_SCAN_LIMIT - scansToday} rewarded scans remaining`;
+    return "";
+  }, [plan, scanStatus, scansToday]);
+
+  useEffect(() => {
+    const pasteHandler = (event: ClipboardEvent) => handlePaste(event as unknown as React.ClipboardEvent);
+    window.addEventListener('paste', pasteHandler);
+    return () => {
+      window.removeEventListener('paste', pasteHandler);
+    };
+  }, []); // handlePaste is wrapped in useCallback, but it has no dependencies, so this is fine.
+
   const handleImageUpload = (file: File) => {
     setImageFile(file);
     const reader = new FileReader();
@@ -62,7 +77,7 @@ export default function ScanPage() {
     reader.readAsDataURL(file);
   };
   
-  const handlePaste = (event: React.ClipboardEvent) => {
+  const handlePaste = useCallback((event: React.ClipboardEvent) => {
     const items = event.clipboardData.items;
     for (const index in items) {
         const item = items[index];
@@ -73,7 +88,7 @@ export default function ScanPage() {
             }
         }
     }
-  };
+  }, []);
 
   const performScan = async () => {
     if (!imagePreview) return;
@@ -132,14 +147,6 @@ export default function ScanPage() {
     setScanResult(null);
     setIsScanning(false);
   };
-
-  useEffect(() => {
-    const pasteHandler = (event: ClipboardEvent) => handlePaste(event as unknown as React.ClipboardEvent);
-    window.addEventListener('paste', pasteHandler);
-    return () => {
-      window.removeEventListener('paste', pasteHandler);
-    };
-  }, []);
 
   if (!isInitialized) {
     return (
@@ -201,14 +208,6 @@ export default function ScanPage() {
              return null;
     }
   }
-  
-  const scansLeftText = useMemo(() => {
-    if (plan === 'Premium') return "You have unlimited scans";
-    if (scanStatus === 'can_scan_free') return `${FREE_SCAN_LIMIT - scansToday} free scans remaining`;
-    if (scanStatus === 'can_scan_with_ad') return `${REWARDED_SCAN_LIMIT - scansToday} rewarded scans remaining`;
-    return "";
-  }, [plan, scanStatus, scansToday]);
-
 
   return (
     <div className="flex flex-col h-full p-4" onPaste={handlePaste}>
