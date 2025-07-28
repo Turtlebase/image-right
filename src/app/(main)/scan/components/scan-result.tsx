@@ -10,10 +10,13 @@ import AiAdvice from './ai-advice';
 import { User, Globe, Download, Share2, Info, FileQuestion, Loader2, Copy, Lock, Tv } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
-import { useTheme } from 'next-themes';
 import { useUsageStore } from '@/hooks/useSubscription';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 import { Skeleton } from '@/components/ui/skeleton';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { useTheme } from 'next-themes';
+
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
   imageUrl: string; // Can be a full data URI or a thumbnail data URI
@@ -31,6 +34,7 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
   const [isShareSupported, setIsShareSupported] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const showRewardedAd = useRewardedAd(state => state.showRewardedAd);
+  const { theme } = useTheme();
 
   useEffect(() => {
     // Zustand's persistence is async, so we wait for rehydration
@@ -44,11 +48,35 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
   }, []);
 
   const handleDownloadPdf = async () => {
-     toast({
-        variant: "destructive",
-        title: "Feature Not Available",
-        description: "PDF export is not available in the current version.",
-    });
+    if (!reportRef.current) return;
+    setIsDownloading(true);
+
+    try {
+        const canvas = await html2canvas(reportRef.current, {
+            useCORS: true,
+            backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+            scale: 2, // Increase scale for better quality
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save('ImageRights_AI_Report.pdf');
+    } catch (error) {
+        console.error("Failed to generate PDF:", error);
+        toast({
+            variant: "destructive",
+            title: "PDF Download Failed",
+            description: "An error occurred while creating the PDF.",
+        });
+    } finally {
+        setIsDownloading(false);
+    }
   };
 
   const getShareText = () => {
@@ -56,41 +84,40 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
   }
 
   const handleShare = async () => {
-    const shareData = {
-      title: 'ImageRights AI Scan Report',
-      text: getShareText(),
-      url: window.location.href,
-    };
+    const shareText = getShareText();
 
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        await navigator.share({
+            title: 'ImageRights AI Scan Report',
+            text: shareText,
+        });
       } catch (error) {
          const err = error as Error;
-         if (err.name === 'AbortError') {
-            return;
+         if (err.name !== 'AbortError') {
+             console.error("Share failed:", err);
+             // Fallback to clipboard if share fails for other reasons
+             await copyToClipboard(shareText);
          }
-        console.error("Share failed:", err);
-        toast({
-            variant: "destructive",
-            title: "Sharing Failed",
-            description: "Could not share the report.",
-        });
       }
     } else {
-        try {
-            await navigator.clipboard.writeText(getShareText());
-            toast({
-                title: "Copied to Clipboard",
-                description: "Report details have been copied.",
-            });
-        } catch (error) {
-             toast({
-                variant: "destructive",
-                title: "Copy Failed",
-                description: "Could not copy the report to your clipboard.",
-            });
-        }
+        await copyToClipboard(shareText);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+        await navigator.clipboard.writeText(text);
+        toast({
+            title: "Copied to Clipboard",
+            description: "Report details have been copied.",
+        });
+    } catch (error) {
+         toast({
+            variant: "destructive",
+            title: "Copy Failed",
+            description: "Could not copy the report to your clipboard.",
+        });
     }
   };
   
@@ -236,7 +263,7 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
       </div>
       
       <div className="grid grid-cols-2 gap-4 mt-6">
-        <Button variant="outline" className="h-12 text-base" onClick={handleDownloadPdf} disabled={isDownloading || true}>
+        <Button variant="outline" className="h-12 text-base" onClick={handleDownloadPdf} disabled={isDownloading}>
           {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
           {isDownloading ? 'Saving...' : 'PDF'}
         </Button>
