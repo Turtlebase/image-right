@@ -8,8 +8,9 @@ import { useTelegram } from '@/components/telegram-provider';
 import { CheckCircle, Star, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { getSubscriptionConfig } from './actions';
 
 const plans = {
     Free: {
@@ -36,6 +37,11 @@ const plans = {
     }
 }
 
+interface RazorpayConfig {
+    keyId: string;
+    planId: string;
+}
+
 export default function SubscriptionPage() {
     const { subscription, isInitialized, refreshSubscription } = useSubscription();
     const { user, webApp } = useTelegram();
@@ -43,11 +49,26 @@ export default function SubscriptionPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [config, setConfig] = useState<RazorpayConfig | null>(null);
+
+    useEffect(() => {
+        async function fetchConfig() {
+            const result = await getSubscriptionConfig();
+            if (result.error || !result.keyId || !result.planId) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Configuration Error',
+                    description: 'Could not load payment details. Please contact support.',
+                });
+            } else {
+                setConfig({ keyId: result.keyId, planId: result.planId });
+            }
+        }
+        fetchConfig();
+    }, [toast]);
 
     const handleUpgrade = async () => {
         setIsLoading(true);
-        const planId = process.env.NEXT_PUBLIC_RAZORPAY_PLAN_ID;
-        const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
         if (!webApp) {
             toast({
@@ -59,7 +80,7 @@ export default function SubscriptionPage() {
             return;
         }
 
-        if (!planId || !keyId || !user) {
+        if (!config || !user) {
             toast({
                 variant: 'destructive',
                 title: 'Configuration Error',
@@ -71,8 +92,8 @@ export default function SubscriptionPage() {
 
         try {
             const options = {
-                key: keyId,
-                plan_id: planId,
+                key: config.keyId,
+                plan_id: config.planId,
                 name: 'ImageRights AI Premium',
                 description: 'Monthly Subscription',
                 callback_url: `${window.location.origin}/subscription/success?user_id=${user.id}`,
@@ -149,7 +170,7 @@ export default function SubscriptionPage() {
                              {subscription.plan === plan.name ? (
                                 <Button disabled className="w-full">Current Plan</Button>
                             ) : (
-                                <Button onClick={handleUpgrade} className="w-full" disabled={isLoading || plan.name === 'Free'}>
+                                <Button onClick={handleUpgrade} className="w-full" disabled={isLoading || !config || plan.name === 'Free'}>
                                     {isLoading && plan.name === 'Premium' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     {plan.name === 'Free' ? 'Current Plan' : 'Upgrade to Premium'}
                                 </Button>
