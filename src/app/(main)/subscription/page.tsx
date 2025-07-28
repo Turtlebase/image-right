@@ -70,7 +70,6 @@ export default function SubscriptionPage() {
         }
 
         // The full URL to your app, needed for the callback.
-        // This is the page Razorpay will redirect to after payment.
         const appBaseUrl = window.location.origin;
         const callbackUrl = `${appBaseUrl}/subscription/success`;
 
