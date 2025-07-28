@@ -63,7 +63,8 @@ export default function SubscriptionPage() {
 
         const options = {
             key: keyId,
-            subscription_id: planId, // For subscription-based checkout
+            plan_id: planId, // Correct parameter for plan-based subscriptions
+            quantity: 1,      // Required when using plan_id
             name: "ImageRights AI Premium",
             description: "Monthly Subscription",
             handler: function (response: any) {
