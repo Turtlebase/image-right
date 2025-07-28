@@ -125,9 +125,11 @@ export default function RewardedAdOverlay() {
                 <main className="flex-grow flex flex-col items-center justify-around p-4 space-y-4">
                     
                     {/* Native Ad Banner - Requires slightly different handling for the container div */}
-                    <div key={`ad3-container-${adRenderKey}`} className="w-[320px] mx-auto">
-                        <script async={true} data-cfasync="false" src="//jigsawharmony.com/70c52ea26480db13807224ac8a8adc70/invoke.js"></script>
-                        <div id="container-70c52ea26480db13807224ac8a8adc70" className="grid grid-cols-2 gap-2"></div>
+                    <div className="flex justify-center" key={`ad3-container-${adRenderKey}`}>
+                        <div>
+                            <script async={true} data-cfasync="false" src="//jigsawharmony.com/70c52ea26480db13807224ac8a8adc70/invoke.js"></script>
+                            <div id="container-70c52ea26480db13807224ac8a8adc70" className="grid grid-cols-2 gap-2"></div>
+                        </div>
                     </div>
 
 
