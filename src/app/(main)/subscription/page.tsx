@@ -70,14 +70,16 @@ export default function SubscriptionPage() {
         }
 
         // The full URL to your app, needed for the callback.
+        // This is the page Razorpay will redirect to after payment.
         const appBaseUrl = window.location.origin;
         const callbackUrl = `${appBaseUrl}/subscription/success`;
 
+        // Construct the correct checkout URL for external opening.
         const checkoutUrl = new URL('https://checkout.razorpay.com/v1/checkout.html');
         checkoutUrl.searchParams.set('key', keyId);
-        checkoutUrl.searchParams.set('plan_id', planId);
+        checkoutUrl.searchParams.set('subscription_id', planId); // For subscription plans, use subscription_id
         checkoutUrl.searchParams.set('callback_url', callbackUrl);
-
+        
         // This is crucial for your webhook to link the payment to the user.
         const notes = {
             telegram_user_id: user.id.toString(),
@@ -90,11 +92,11 @@ export default function SubscriptionPage() {
         });
 
         try {
-            // Use Telegram's openLink method for better integration
+            // Use Telegram's openLink method for the best integration
             if (webApp) {
                  webApp.openLink(checkoutUrl.href);
             } else {
-                // Fallback for browsers
+                // Fallback for regular browsers
                 window.open(checkoutUrl.href, '_blank');
             }
             
