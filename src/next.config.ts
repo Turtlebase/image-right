@@ -19,10 +19,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  env: {
-    NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-    NEXT_PUBLIC_RAZORPAY_PLAN_ID: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_ID,
-  },
   experimental: {
     allowedDevOrigins: [
       'https://*.cloudworkstations.dev',
