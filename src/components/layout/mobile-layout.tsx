@@ -41,10 +41,12 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
 
     let adCount = 0;
     const maxAdsPerSession = 10;
-    let initialTimer: NodeJS.Timeout | null = null;
+    let monetagTimer: NodeJS.Timeout | null = null;
+    let adsterraTimer: NodeJS.Timeout | null = null;
     let subsequentInterval: NodeJS.Timeout | null = null;
 
     const showMonetagInApp = () => {
+      if (adCount >= maxAdsPerSession) return;
       if (typeof show_9631988 === 'function') {
         show_9631988({ type: 'inApp' })
           .then(() => {
@@ -55,6 +57,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
     };
     
     const showAdsterraSocialBar = () => {
+       if (adCount >= maxAdsPerSession) return;
        if (typeof adsterra_social_bar_show === 'function') {
         try {
           adsterra_social_bar_show();
@@ -72,7 +75,9 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
       }
       
       // Alternate between Monetag and Adsterra
-      // The first ad (adCount 0) will be Monetag, second (adCount 1) Adsterra, etc.
+      // Monetag is even (0, 2, 4...), Adsterra is odd (1, 3, 5...)
+      // But since we fire the first two ads manually, we start the interval logic
+      // based on the current adCount.
       if (adCount % 2 === 0) {
         showMonetagInApp();
       } else {
@@ -80,18 +85,22 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Show the first ad after 30 seconds
-    initialTimer = setTimeout(() => {
-      showNextAd();
-      
-      // After the first ad, set an interval for every 5 minutes
-      subsequentInterval = setInterval(showNextAd, 5 * 60 * 1000); // 5 minutes
-      
-    }, 30 * 1000); // 30 seconds
+    // Show the first ad (Monetag) after 30 seconds
+    monetagTimer = setTimeout(showMonetagInApp, 30 * 1000); // 30 seconds
+
+    // Show the second ad (Adsterra) after 2 minutes
+    adsterraTimer = setTimeout(showAdsterraSocialBar, 2 * 60 * 1000); // 2 minutes
+
+    // Start the recurring 5-minute interval after the first ad has had time to show
+    const intervalStartDelay = 2 * 60 * 1000 + 1000; // Start interval just after the 2-min ad
+    setTimeout(() => {
+        subsequentInterval = setInterval(showNextAd, 5 * 60 * 1000); // 5 minutes
+    }, intervalStartDelay);
 
     // Cleanup timers when the component unmounts or subscription plan changes
     return () => {
-      if (initialTimer) clearTimeout(initialTimer);
+      if (monetagTimer) clearTimeout(monetagTimer);
+      if (adsterraTimer) clearTimeout(adsterraTimer);
       if (subsequentInterval) clearInterval(subsequentInterval);
     };
 
