@@ -1,11 +1,10 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSubscription } from '@/hooks/useSubscription';
 import { CheckCircle, Loader2 } from 'lucide-react';
-import { useTelegram } from '@/components/telegram-provider';
 
 function SuccessContent() {
     const router = useRouter();
@@ -44,11 +43,10 @@ function SuccessContent() {
     )
 }
 
-export default function SubscriptionSuccessPage() {
-    const { isInitialized: isSubscriptionInitialized } = useSubscription();
-    const { webApp } = useTelegram();
+function SubscriptionSuccessPage() {
+    const { isInitialized } = useSubscription();
 
-    if (!isSubscriptionInitialized || !webApp) {
+    if (!isInitialized) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -59,3 +57,17 @@ export default function SubscriptionSuccessPage() {
     
     return <SuccessContent />;
 }
+
+export default function SuspenseWrapper() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="mt-4">Loading...</p>
+            </div>
+        }>
+            <SubscriptionSuccessPage />
+        </Suspense>
+    )
+}
+

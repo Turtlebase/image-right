@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { createPaymentLink } from '@/ai/flows/create-payment-link';
 
 const plans = {
     Free: {
@@ -71,18 +70,12 @@ export default function SubscriptionPage() {
         }
 
         try {
-            const result = await createPaymentLink({
-                planId: planId,
-                telegramUserId: user.id.toString(),
-                telegramUsername: user.username || 'N/A',
-            });
-            
             const options = {
                 key: keyId,
-                subscription_id: result.subscription_id,
+                plan_id: planId,
                 name: 'ImageRights AI Premium',
                 description: 'Monthly Subscription',
-                callback_url: `${window.location.origin}/subscription/success`,
+                callback_url: `${window.location.origin}/subscription/success?user_id=${user.id}`,
                 redirect: true,
                  config: {
                     display: {
@@ -90,17 +83,16 @@ export default function SubscriptionPage() {
                     }
                 }
             };
-
             // @ts-ignore
             const razorpay = new window.Razorpay(options);
             razorpay.open();
 
         } catch (error) {
-            console.error("Payment Link Error:", error);
+            console.error("Razorpay Error:", error);
             toast({
                 variant: 'destructive',
-                title: 'Could Not Get Payment Link',
-                description: 'Failed to generate a payment link. Please try again later.',
+                title: 'Payment Error',
+                description: 'Could not initiate the payment process. Please try again later.',
             });
         } finally {
             setIsLoading(false);
@@ -167,7 +159,7 @@ export default function SubscriptionPage() {
                 ))}
             </div>
              <Card className="mt-6 text-center p-4 bg-accent/20 border-accent/30">
-                <p className="text-sm text-accent-foreground/90">After successful payment, please return to the app and tap below to update your status.</p>
+                <p className="text-sm text-accent-foreground/90">After successful payment, please return to the app. If your plan isn't updated, tap below.</p>
                 <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="mt-3">
                     {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                     Refresh Status
