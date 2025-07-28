@@ -70,7 +70,7 @@ const prompt = ai.definePrompt(
 **Analysis Steps:**
 
 1.  **IP Identification FIRST:** Before anything else, analyze the image content for any and all potential copyrightable material. This is the most important step. Look for:
-    *   **Characters:** Human or non-human characters from movies, TV shows, video games, etc.
+    *   **Characters:** Human or non-human characters from movies, TV shows, video games, anime, cartoons, etc.
     *   **Logos & Branding:** Corporate logos, symbols, or other branding elements.
     *   **Artworks/Illustrations:** Famous paintings, illustrations, or other artworks depicted within the image.
     *   **Product Designs:** The specific, distinctive design and "trade dress" of manufactured products. **This is crucial.** A photo of a generic, unbranded object is different from a photo of a highly designed, branded product. For example, a picture of a **Koenigsegg Gemera** car is not just a picture of "a car"; it's a picture of a specific, copyrighted design.
@@ -119,5 +119,3 @@ const analyzeImageCopyrightFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
