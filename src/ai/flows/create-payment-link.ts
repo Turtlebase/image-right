@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview A Genkit flow to create a Razorpay subscription link.
- * 
- * - createPaymentLink - A function that creates a Razorpay subscription link.
+ * @fileOverview A Genkit flow to create a Razorpay subscription.
+ *
+ * - createPaymentLink - A function that creates a Razorpay subscription.
  * - CreatePaymentLinkInput - The input type for the function.
  * - CreatePaymentLinkOutput - The return type for the function.
  */
@@ -25,7 +25,7 @@ const CreatePaymentLinkInputSchema = z.object({
 export type CreatePaymentLinkInput = z.infer<typeof CreatePaymentLinkInputSchema>;
 
 const CreatePaymentLinkOutputSchema = z.object({
-  short_url: z.string().describe("The short URL for the subscription link."),
+  subscription_id: z.string().describe("The ID of the created subscription."),
 });
 export type CreatePaymentLinkOutput = z.infer<typeof CreatePaymentLinkOutputSchema>;
 
@@ -33,7 +33,7 @@ export async function createPaymentLink(input: CreatePaymentLinkInput): Promise<
   return createPaymentLinkFlow(input);
 }
 
-export const createPaymentLinkFlow = ai.flow(
+const createPaymentLinkFlow = ai.flow(
   {
     name: 'createPaymentLinkFlow',
     inputSchema: CreatePaymentLinkInputSchema,
@@ -41,12 +41,12 @@ export const createPaymentLinkFlow = ai.flow(
   },
   async (input) => {
     const instance = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID!,
-        key_secret: process.env.RAZORPAY_KEY_SECRET!,
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
     });
-      
+
     try {
-      const result = await instance.subscriptionLink.create({
+      const result = await instance.subscriptions.create({
         plan_id: input.planId,
         total_count: 12, // For a 1-year subscription with monthly billing
         quantity: 1,
@@ -55,14 +55,14 @@ export const createPaymentLinkFlow = ai.flow(
           username: input.telegramUsername,
         },
         notify_info: {
-            notify_phone: false,
-            notify_email: false,
+          notify_phone: false,
+          notify_email: false,
         }
       });
-      return { short_url: result.short_url };
+      return { subscription_id: result.id };
     } catch (error) {
-        console.error("Razorpay API Error:", error);
-        throw new Error("Failed to create Razorpay subscription link.");
+      console.error("Razorpay API Error:", error);
+      throw new Error("Failed to create Razorpay subscription.");
     }
   }
 );

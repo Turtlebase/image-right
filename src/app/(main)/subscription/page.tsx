@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { createPaymentLink } from '@/ai/flows/create-payment-link';
 
 const plans = {
     Free: {
@@ -69,28 +70,37 @@ export default function SubscriptionPage() {
             return;
         }
 
-        const options = {
-            key: keyId,
-            plan_id: planId, // CORRECTED: Was `subscription_id` which is wrong for new subscriptions
-            callback_url: `${window.location.origin}/subscription/success`,
-            redirect: true,
-            config: {
-                display: {
-                    hide: [{ method: 'upi' }]
-                }
-            }
-        };
-
         try {
+            const result = await createPaymentLink({
+                planId: planId,
+                telegramUserId: user.id.toString(),
+                telegramUsername: user.username || 'N/A',
+            });
+            
+            const options = {
+                key: keyId,
+                subscription_id: result.subscription_id,
+                name: 'ImageRights AI Premium',
+                description: 'Monthly Subscription',
+                callback_url: `${window.location.origin}/subscription/success`,
+                redirect: true, // Important for webhooks and server-side confirmation
+                 config: {
+                    display: {
+                        hide: [{ method: 'upi' }]
+                    }
+                }
+            };
+
             // @ts-ignore
             const razorpay = new window.Razorpay(options);
             razorpay.open();
+
         } catch (error) {
-            console.error("Razorpay Error:", error);
+            console.error("Payment Link Error:", error);
             toast({
                 variant: 'destructive',
-                title: 'Payment Error',
-                description: 'Could not initialize the payment gateway. Please try again.',
+                title: 'Could Not Get Payment Link',
+                description: 'Failed to generate a payment link. Please try again later.',
             });
         } finally {
             setIsLoading(false);
@@ -99,7 +109,7 @@ export default function SubscriptionPage() {
     
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        refreshSubscription(); // This will re-check localStorage
+        await refreshSubscription();
         await new Promise(res => setTimeout(res, 500));
         setIsRefreshing(false);
         toast({
@@ -149,7 +159,7 @@ export default function SubscriptionPage() {
                             ) : (
                                 <Button onClick={handleUpgrade} className="w-full" disabled={isLoading || plan.name === 'Free'}>
                                     {isLoading && plan.name === 'Premium' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {plan.name === 'Free' ? 'Downgrade to Free' : 'Upgrade to Premium'}
+                                    {plan.name === 'Free' ? 'Current Plan' : 'Upgrade to Premium'}
                                 </Button>
                             )}
                         </CardFooter>
