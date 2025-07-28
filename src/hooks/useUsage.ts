@@ -42,8 +42,8 @@ export function UsageProvider({ children }: { children: React.ReactNode }) {
     lastScanDate: null,
   });
   const [isInitialized, setIsInitialized] = useState(false);
-  
-  const loadState = useCallback(() => {
+
+  const refreshUsage = useCallback(() => {
     try {
         const savedState = localStorage.getItem(USAGE_KEY);
         const today = new Date().toISOString().split('T')[0];
@@ -72,12 +72,11 @@ export function UsageProvider({ children }: { children: React.ReactNode }) {
   }, [isInitialized]);
 
   useEffect(() => {
-    loadState();
-  }, [loadState]);
-
-  const refreshUsage = useCallback(() => {
-    loadState();
-  }, [loadState]);
+    // Only run on the client
+    if (typeof window !== 'undefined') {
+        refreshUsage();
+    }
+  }, [refreshUsage]);
 
 
   useEffect(() => {
