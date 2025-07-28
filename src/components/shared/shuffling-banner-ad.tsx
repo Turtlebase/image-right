@@ -33,13 +33,11 @@ export default function ShufflingBannerAd() {
         return () => clearInterval(interval);
     }, []);
 
-    if (!isMounted) {
-        return null;
-    }
-
+    // Render an empty div with the same class names on the server and during initial client render.
+    // This ensures the DOM structure matches between server and client to avoid hydration errors.
     return (
         <div className="flex justify-center items-center h-[50px] bg-background">
-            <AdBanner key={adKey} adKey={adKey} />
+            {isMounted && <AdBanner key={adKey} adKey={adKey} />}
         </div>
     );
 }
