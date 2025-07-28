@@ -4,6 +4,8 @@
 import { useEffect, useState } from 'react';
 
 const AdBanner = ({ adKey }: { adKey: string }) => {
+    // This component now directly renders the script tags.
+    // The parent component will use a `key` to force a full re-mount, ensuring these scripts re-execute.
     return (
         <div className="flex justify-center items-center h-[50px] w-[320px]">
             <script type="text/javascript" dangerouslySetInnerHTML={{ __html: `
@@ -22,8 +24,11 @@ const AdBanner = ({ adKey }: { adKey: string }) => {
 
 export default function ShufflingBannerAd() {
     const [adKey, setAdKey] = useState(`ad-${Date.now()}`);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
+
         const interval = setInterval(() => {
             setAdKey(`ad-${Date.now()}`);
         }, 30000); // 30 seconds
@@ -31,8 +36,11 @@ export default function ShufflingBannerAd() {
         return () => clearInterval(interval);
     }, []);
 
-    // The entire component is now client-side only due to dynamic import,
-    // so we no longer need the isMounted check.
+    if (!isMounted) {
+        // Render a placeholder with the same dimensions to avoid layout shifts and hydration errors
+        return <div className="flex justify-center items-center h-[50px] bg-background" />;
+    }
+
     return (
         <div className="flex justify-center items-center h-[50px] bg-background">
             <AdBanner key={adKey} adKey={adKey} />
