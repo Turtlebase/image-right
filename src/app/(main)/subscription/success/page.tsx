@@ -5,12 +5,14 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { useTelegram } from '@/components/telegram-provider';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export default function SubscriptionSuccessPage() {
     const router = useRouter();
     const { webApp } = useTelegram();
+    const { setPlan, isInitialized: isSubscriptionInitialized } = useSubscription();
     const [countdown, setCountdown] = useState(5);
 
     const handleRedirect = () => {
@@ -24,6 +26,13 @@ export default function SubscriptionSuccessPage() {
     };
 
     useEffect(() => {
+        if (!isSubscriptionInitialized) {
+            return; // Wait for the subscription context to be ready
+        }
+        
+        // Set the plan to premium as soon as the success page is loaded and context is ready
+        setPlan('Premium');
+
         if (countdown <= 0) {
             handleRedirect();
             return;
@@ -34,7 +43,16 @@ export default function SubscriptionSuccessPage() {
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [countdown]);
+    }, [countdown, isSubscriptionInitialized, setPlan]);
+
+    if (!isSubscriptionInitialized) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="mt-4">Finalizing your subscription...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-background p-4">
