@@ -70,8 +70,6 @@ export default function SubscriptionPage() {
         }
 
         // The full URL to your app, needed for the callback.
-        // This assumes your app is running on a specific domain.
-        // In production, you'd replace this with your actual app URL.
         const appBaseUrl = window.location.origin;
         const callbackUrl = `${appBaseUrl}/subscription/success`;
 
