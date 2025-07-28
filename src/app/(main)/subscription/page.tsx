@@ -76,7 +76,8 @@ export default function SubscriptionPage() {
         // Construct the correct checkout URL for external opening.
         const checkoutUrl = new URL('https://checkout.razorpay.com/v1/checkout.html');
         checkoutUrl.searchParams.set('key', keyId);
-        checkoutUrl.searchParams.set('subscription_id', planId); // For subscription plans, use subscription_id
+        // This is the key fix: Razorpay uses 'subscription_id' to create a new subscription from a 'plan_id'.
+        checkoutUrl.searchParams.set('subscription_id', planId); 
         checkoutUrl.searchParams.set('callback_url', callbackUrl);
         
         // This is crucial for your webhook to link the payment to the user.
