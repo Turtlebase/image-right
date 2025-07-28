@@ -10,7 +10,7 @@ import AiAdvice from './ai-advice';
 import { User, Globe, Download, Share2, Info, FileQuestion, Loader2, Copy, Lock, Tv } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
-import { useUsageStore } from '@/hooks/useSubscription';
+import { useUsageStore } from '@/hooks/use-usage-store';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 import { Skeleton } from '@/components/ui/skeleton';
 import jsPDF from 'jspdf';
