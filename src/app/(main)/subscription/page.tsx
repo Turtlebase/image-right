@@ -3,14 +3,13 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSubscription, type SubscriptionPlan } from '@/hooks/useSubscription';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useTelegram } from '@/components/telegram-provider';
 import { CheckCircle, Star, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { createPaymentLink } from '@/ai/flows/create-payment-link';
 
 const plans = {
     Free: {
@@ -48,9 +47,10 @@ export default function SubscriptionPage() {
     const handleUpgrade = async () => {
         setIsLoading(true);
         const planId = process.env.NEXT_PUBLIC_RAZORPAY_PLAN_ID;
-        
+        const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
         if (!webApp) {
-             toast({
+            toast({
                 variant: 'destructive',
                 title: 'Not in Telegram',
                 description: 'This feature is only available within the Telegram app.',
@@ -59,7 +59,7 @@ export default function SubscriptionPage() {
             return;
         }
 
-        if (!planId || !user) {
+        if (!planId || !keyId || !user) {
             toast({
                 variant: 'destructive',
                 title: 'Configuration Error',
@@ -69,33 +69,38 @@ export default function SubscriptionPage() {
             return;
         }
 
-        try {
-            const result = await createPaymentLink({
-                planId: planId,
-                telegramUserId: user.id.toString(),
-                telegramUsername: user.username || 'N/A',
-            });
-            
-            webApp.openLink(result.short_url);
+        const options = {
+            key: keyId,
+            plan_id: planId, // CORRECTED: Was `subscription_id` which is wrong for new subscriptions
+            callback_url: `${window.location.origin}/subscription/success`,
+            redirect: true,
+            config: {
+                display: {
+                    hide: [{ method: 'upi' }]
+                }
+            }
+        };
 
-        } catch (e) {
-            console.error("Payment Link Error", e)
-             toast({
+        try {
+            // @ts-ignore
+            const razorpay = new window.Razorpay(options);
+            razorpay.open();
+        } catch (error) {
+            console.error("Razorpay Error:", error);
+            toast({
                 variant: 'destructive',
-                title: 'Could Not Get Payment Link',
-                description: 'Failed to generate a payment link. Please try again later.',
+                title: 'Payment Error',
+                description: 'Could not initialize the payment gateway. Please try again.',
             });
         } finally {
             setIsLoading(false);
         }
-    }
+    };
     
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        // This assumes your webhook/backend updates a source that this function checks.
-        // For now, we'll simulate a check and guide the user.
-        await new Promise(res => setTimeout(res, 1000));
         refreshSubscription(); // This will re-check localStorage
+        await new Promise(res => setTimeout(res, 500));
         setIsRefreshing(false);
         toast({
             title: "Status Refreshed",
