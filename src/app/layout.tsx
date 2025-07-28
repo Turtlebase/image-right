@@ -63,6 +63,7 @@ export default function RootLayout({
           </TelegramProvider>
           <Toaster />
         </ThemeProvider>
+        <script type='text/javascript' src='//jigsawharmony.com/be/08/4b/be084ba313cde54505eaf796241204e7.js'></script>
       </body>
     </html>
   );

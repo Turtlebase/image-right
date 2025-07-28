@@ -16,6 +16,9 @@ import AdsterraBanner from '../ads/adsterra-banner';
 
 // This function will be defined globally by the Monetag script
 declare function show_9631988(options?: any): Promise<void>;
+// This function will be defined globally by the Adsterra Social Bar script
+declare function adsterra_social_bar_show(): void;
+
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -31,7 +34,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
   const { subscription } = useSubscription();
 
   React.useEffect(() => {
-    // Only show in-app interstitial ads for free users
+    // Only show pop-up style ads for free users
     if (subscription.plan !== 'Free') {
       return;
     }
@@ -40,13 +43,8 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
     const maxAdsPerSession = 10;
     let initialTimer: NodeJS.Timeout | null = null;
     let subsequentInterval: NodeJS.Timeout | null = null;
-    
-    const showAd = () => {
-      if (adCount >= maxAdsPerSession) {
-        if (subsequentInterval) clearInterval(subsequentInterval);
-        return;
-      }
-      
+
+    const showMonetagInApp = () => {
       if (typeof show_9631988 === 'function') {
         show_9631988({ type: 'inApp' })
           .then(() => {
@@ -55,13 +53,39 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
           .catch((err: any) => console.error("Monetag in-app ad error:", err));
       }
     };
+    
+    const showAdsterraSocialBar = () => {
+       if (typeof adsterra_social_bar_show === 'function') {
+        try {
+          adsterra_social_bar_show();
+          adCount++;
+        } catch(err) {
+            console.error("Adsterra social bar error:", err);
+        }
+      }
+    }
+
+    const showNextAd = () => {
+      if (adCount >= maxAdsPerSession) {
+        if (subsequentInterval) clearInterval(subsequentInterval);
+        return;
+      }
+      
+      // Alternate between Monetag and Adsterra
+      // The first ad (adCount 0) will be Monetag, second (adCount 1) Adsterra, etc.
+      if (adCount % 2 === 0) {
+        showMonetagInApp();
+      } else {
+        showAdsterraSocialBar();
+      }
+    };
 
     // Show the first ad after 30 seconds
     initialTimer = setTimeout(() => {
-      showAd();
+      showNextAd();
       
       // After the first ad, set an interval for every 5 minutes
-      subsequentInterval = setInterval(showAd, 5 * 60 * 1000); // 5 minutes
+      subsequentInterval = setInterval(showNextAd, 5 * 60 * 1000); // 5 minutes
       
     }, 30 * 1000); // 30 seconds
 
