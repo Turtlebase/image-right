@@ -20,12 +20,19 @@ export default function HomePage() {
       </p>
       
       <div className="mt-10 flex flex-col gap-4 w-full max-w-xs">
-        <Button asChild size="lg" className="rounded-full text-lg h-14 font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20">
-          <Link href="/scan">Start Scanning</Link>
-        </Button>
-        <Button asChild variant="ghost" size="lg" className="rounded-full text-lg h-14">
-          <Link href="/guide">View Guide</Link>
-        </Button>
+        <Link href="/scan" passHref>
+          <Button
+            size="lg"
+            className="rounded-full text-lg h-14 font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
+          >
+            Start Scanning
+          </Button>
+        </Link>
+        <Link href="/guide" passHref>
+          <Button asChild variant="ghost" size="lg" className="rounded-full text-lg h-14">
+            View Guide
+          </Button>
+        </Link>
       </div>
 
       <p className="text-sm text-muted-foreground mt-16">
