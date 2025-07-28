@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
+import { Button } from '@/components/ui/button';
 
 export default function RewardedAdOverlay() {
     const { isVisible, hideRewardedAd, callbacks, setAdLoading } = useRewardedAd();
@@ -98,7 +99,7 @@ export default function RewardedAdOverlay() {
                 clearInterval(intervalRef.current);
             }
         };
-    }, [isVisible, setAdLoading]);
+    }, [isVisible, setAdLoading, callbacks]);
 
     if (!isVisible) {
         return null;
