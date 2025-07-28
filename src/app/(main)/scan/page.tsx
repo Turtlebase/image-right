@@ -92,8 +92,9 @@ export default function ScanPage() {
     setIsScanning(true);
     setScanResult(null);
     try {
-      recordScan();
       const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
+      // Only record the scan after a successful result is received.
+      recordScan();
       const fullResult: ScanResultData = { ...result, imageUrl: imagePreview };
       setScanResult(fullResult);
       await addScanToHistory(fullResult);
@@ -102,7 +103,7 @@ export default function ScanPage() {
        toast({
         variant: "destructive",
         title: "Scan Failed",
-        description: "There was an error analyzing the image. Please try again.",
+        description: "There was an error analyzing the image. This scan has not been counted against your daily limit.",
       })
     } finally {
       setIsScanning(false);
