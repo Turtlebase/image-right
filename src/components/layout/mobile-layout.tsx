@@ -16,8 +16,6 @@ import AdsterraBanner from '../ads/adsterra-banner';
 
 // This function will be defined globally by the Monetag script
 declare function show_9631988(options?: any): Promise<void>;
-// This function will be defined globally by the Adsterra Social Bar script
-declare function adsterra_social_bar_show(): void;
 
 
 const navItems = [
@@ -41,12 +39,14 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
 
     let adCount = 0;
     const maxAdsPerSession = 10;
-    let monetagTimer: NodeJS.Timeout | null = null;
-    let adsterraTimer: NodeJS.Timeout | null = null;
+    let initialTimer: NodeJS.Timeout | null = null;
     let subsequentInterval: NodeJS.Timeout | null = null;
 
     const showMonetagInApp = () => {
-      if (adCount >= maxAdsPerSession) return;
+      if (adCount >= maxAdsPerSession) {
+        if (subsequentInterval) clearInterval(subsequentInterval);
+        return;
+      }
       if (typeof show_9631988 === 'function') {
         show_9631988({ type: 'inApp' })
           .then(() => {
@@ -55,50 +55,18 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
           .catch((err: any) => console.error("Monetag in-app ad error:", err));
       }
     };
-    
-    const showAdsterraSocialBar = () => {
-       if (adCount >= maxAdsPerSession) return;
-       if (typeof adsterra_social_bar_show === 'function') {
-        try {
-          adsterra_social_bar_show();
-          adCount++;
-        } catch(err) {
-            console.error("Adsterra social bar error:", err);
-        }
-      }
-    }
 
-    const showNextAd = () => {
-      if (adCount >= maxAdsPerSession) {
-        if (subsequentInterval) clearInterval(subsequentInterval);
-        return;
-      }
-      
-      // Alternate between Monetag and Adsterra
-      // The logic starts counting from ad #2, as #0 and #1 are fired manually.
-      if (adCount % 2 === 0) {
+    // Show the first ad after 30 seconds
+    initialTimer = setTimeout(() => {
         showMonetagInApp();
-      } else {
-        showAdsterraSocialBar();
-      }
-    };
+        // After the first ad, start the recurring 5-minute interval
+        subsequentInterval = setInterval(showMonetagInApp, 5 * 60 * 1000); // 5 minutes
+    }, 30 * 1000); // 30 seconds
 
-    // Show the first ad (Monetag) after 30 seconds
-    monetagTimer = setTimeout(showMonetagInApp, 30 * 1000); // 30 seconds
-
-    // Show the second ad (Adsterra) after 2 minutes
-    adsterraTimer = setTimeout(showAdsterraSocialBar, 2 * 60 * 1000); // 2 minutes
-
-    // Start the recurring 5-minute interval after the 2-minute ad has had time to show
-    const intervalStartDelay = 2 * 60 * 1000 + 1000;
-    setTimeout(() => {
-        subsequentInterval = setInterval(showNextAd, 5 * 60 * 1000); // 5 minutes
-    }, intervalStartDelay);
 
     // Cleanup timers when the component unmounts or subscription plan changes
     return () => {
-      if (monetagTimer) clearTimeout(monetagTimer);
-      if (adsterraTimer) clearTimeout(adsterraTimer);
+      if (initialTimer) clearTimeout(initialTimer);
       if (subsequentInterval) clearInterval(subsequentInterval);
     };
 
