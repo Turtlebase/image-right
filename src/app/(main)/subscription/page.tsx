@@ -44,30 +44,37 @@ export default function SubscriptionPage() {
 
         const payload = `premium-month-${user.id}-${Date.now()}`;
 
-        // This is the correct way to call showInvoice for Telegram Stars.
-        // The provider_token is intentionally left empty. Telegram's documentation
-        // confirms this is the correct procedure when using XTR (Stars) as the currency.
-        webApp.showInvoice({
-            title: 'ImageRights AI Premium',
-            description: 'Unlock all premium features for one month.',
-            payload: payload,
-            provider_token: '', // Must be empty for Stars
-            currency: 'XTR',
-            prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
-        }, (status) => {
-            if (status === 'paid') {
-                // Optimistically set premium and redirect.
-                // The webhook will provide the official server-side confirmation.
-                setPremium();
-                router.push('/subscription/success');
-            } else {
-                // For 'failed', 'cancelled', or any other status, stop loading.
-                if (status === 'failed') {
+        try {
+            // As per Telegram's documentation for paying with Stars (XTR currency),
+            // the `provider_token` field MUST NOT be included in the request.
+            webApp.showInvoice({
+                title: 'ImageRights AI Premium',
+                description: 'Unlock all premium features for one month.',
+                payload: payload,
+                currency: 'XTR',
+                prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
+            }, (status) => {
+                setIsLoading(false); // Reset loading state regardless of outcome
+                
+                if (status === 'paid') {
+                    // Optimistically set premium and redirect.
+                    // The webhook will provide the official server-side confirmation.
+                    setPremium();
+                    router.push('/subscription/success');
+                } else if (status === 'failed') {
                     toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
                 }
-                setIsLoading(false);
-            }
-        });
+                // 'cancelled' or other statuses do not need a specific toast message.
+            });
+        } catch (error) {
+            setIsLoading(false);
+            console.error("Error showing invoice:", error);
+            toast({
+                variant: 'destructive',
+                title: 'An Error Occurred',
+                description: 'Could not initiate the payment process. Please try again later.'
+            });
+        }
     };
 
     if (isPremium) {
