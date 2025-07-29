@@ -16,6 +16,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useTheme } from 'next-themes';
 import { useSubscription } from '@/hooks/useSubscription';
+import GeneratePost from './generate-post';
 
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
@@ -161,6 +162,8 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
             <p className="text-lg font-semibold mt-2">{data.copyrightStatus}</p>
           </CardContent>
         </Card>
+
+        {isUnlocked && <GeneratePost imageUrl={data.imageUrl} />}
 
         {data.moderationInfo && (
           <Card className="bg-accent/20 border-accent/30">

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Star, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Star, Sparkles, Bot } from 'lucide-react';
 import Link from 'next/link';
 import { useTelegram } from '@/components/telegram-provider';
 import { useToast } from '@/hooks/use-toast';
@@ -12,8 +12,9 @@ import { useRouter } from 'next/navigation';
 
 const premiumFeatures = [
     { text: "Unlimited Scans", icon: Sparkles },
-    { text: "More Advanced AI Model", icon: Sparkles },
-    { text: "Unlimited History", icon: Sparkles },
+    { text: "Most Advanced AI Model", icon: Sparkles },
+    { text: "AI Social Media Post Generation", icon: Bot },
+    { text: "Unlimited Scan History", icon: Sparkles },
     { text: "No Ads", icon: Sparkles },
 ];
 
@@ -39,8 +40,8 @@ export default function SubscriptionPage() {
             title: 'ImageRights AI Premium',
             description: 'Unlock all premium features for one month.',
             payload: payload,
-            // provider_token is left empty when using Telegram Stars as the currency.
-            // For real payment providers like Stripe, you would get this token from @BotFather.
+            // provider_token is intentionally left empty when using Telegram Stars.
+            // For real payment providers, you would get this token from @BotFather.
             provider_token: '',
             currency: 'XTR',
             prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
@@ -86,7 +87,7 @@ export default function SubscriptionPage() {
                     <div className="space-y-3">
                         {premiumFeatures.map((feature, index) => (
                             <div key={index} className="flex items-start gap-3">
-                                <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
+                                <feature.icon className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
                                 <p className="text-foreground">{feature.text}</p>
                             </div>
                         ))}
@@ -100,7 +101,7 @@ export default function SubscriptionPage() {
                         disabled={isLoading}
                     >
                         {isLoading ? (
-                            <Loader2 className="animate-spin" />
+                            <Bot className="animate-spin" />
                         ) : (
                             <>
                                 Upgrade for {STAR_PRICE} <Star className="ml-2 fill-yellow-400 text-yellow-400" />
