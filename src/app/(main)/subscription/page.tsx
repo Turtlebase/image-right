@@ -40,7 +40,7 @@ export default function SubscriptionPage() {
             title: 'ImageRights AI Premium',
             description: 'Unlock all premium features for one month.',
             payload: payload,
-            // provider_token is intentionally left empty when using Telegram Stars.
+            // The provider_token is intentionally left empty when using Telegram Stars.
             // For real payment providers, you would get this token from @BotFather.
             provider_token: '',
             currency: 'XTR',
@@ -58,7 +58,7 @@ export default function SubscriptionPage() {
                  toast({ variant: 'default', title: 'Payment Cancelled', description: 'You have cancelled the payment process.' });
                  setIsLoading(false);
             }
-            // For 'pending' status, we also stop loading and wait for the webhook confirmation.
+            // For 'pending' status, or any other status, we also stop loading and wait for webhook confirmation.
             else {
                 setIsLoading(false);
             }
