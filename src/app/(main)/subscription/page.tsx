@@ -26,31 +26,38 @@ export default function SubscriptionPage() {
     const [isLoading, setIsLoading] = useState(false);
 
     const handlePurchase = () => {
-        if (!webApp) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Telegram Web App not available.' });
+        if (!webApp || !user) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Telegram user information not available. Please try again later.' });
             return;
         }
 
         setIsLoading(true);
 
-        const invoicePayload = {
+        const payload = `premium-month-${user.id}-${Date.now()}`;
+
+        webApp.showInvoice({
             title: 'ImageRights AI Premium',
             description: 'Unlock all premium features for one month.',
-            payload: `premium-month-${user?.id || 'unknown'}`,
-            provider_token: null,
+            payload: payload,
+            provider_token: '', // Leave empty for Stars
             currency: 'XTR',
             prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
-        };
-
-        webApp.showInvoice(invoicePayload, (status) => {
+        }, (status) => {
             if (status === 'paid') {
+                // The webhook will handle the premium status update.
+                // Redirect to a success page for a good user experience.
                 router.push('/subscription/success');
             } else if (status === 'failed') {
                 toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
+                 setIsLoading(false);
             } else if (status === 'cancelled') {
                  toast({ variant: 'default', title: 'Payment Cancelled', description: 'You have cancelled the payment process.' });
+                 setIsLoading(false);
             }
-             setIsLoading(false);
+            // For 'pending' status, we also stop loading and wait for webhook.
+            else {
+                setIsLoading(false);
+            }
         });
     };
 
