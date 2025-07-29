@@ -30,13 +30,11 @@ export default function SubscriptionPage() {
     const { isPremium, setPremium } = useSubscription();
 
     const handlePurchase = () => {
-        if (isLoading) return;
-
-        if (!webApp || !user) {
+        if (!webApp || !user || isLoading) {
             toast({
                 variant: 'destructive',
                 title: 'Telegram Not Ready',
-                description: 'Telegram user information not available. Please restart the app.'
+                description: 'Telegram user information not available. Please wait a moment or restart the app.'
             });
             return;
         }
@@ -46,8 +44,6 @@ export default function SubscriptionPage() {
         const payload = `premium-month-${user.id}-${Date.now()}`;
 
         try {
-            // As per Telegram's documentation, for `XTR` (Stars),
-            // the `provider_token` field MUST NOT be included.
             webApp.showInvoice({
                 title: 'ImageRights AI Premium',
                 description: 'Unlock all premium features for one month.',
@@ -55,11 +51,7 @@ export default function SubscriptionPage() {
                 currency: 'XTR',
                 prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
             }, (status) => {
-                // This callback handles the result of the invoice pop-up.
-                // The actual premium grant is handled by the server webhook.
                 if (status === 'paid') {
-                    // Optimistically set premium and redirect.
-                    // The webhook provides the official server-side confirmation.
                     setPremium();
                     router.push('/subscription/success');
                 } else if (status === 'failed') {
@@ -103,6 +95,8 @@ export default function SubscriptionPage() {
         );
     }
 
+    const isPurchaseDisabled = !webApp || isLoading;
+
     return (
         <div className="p-4 animate-in fade-in-50 duration-500">
             <Button variant="ghost" asChild className="mb-4">
@@ -136,10 +130,12 @@ export default function SubscriptionPage() {
                         size="lg" 
                         className="w-full rounded-full text-lg h-14 font-bold" 
                         onClick={handlePurchase}
-                        disabled={isLoading}
+                        disabled={isPurchaseDisabled}
                     >
                         {isLoading ? (
                             <Bot className="animate-spin" />
+                        ) : !webApp ? (
+                            'Initializing...'
                         ) : (
                             <>
                                 Upgrade for {STAR_PRICE} <Star className="ml-2 fill-yellow-400 text-yellow-400" />
