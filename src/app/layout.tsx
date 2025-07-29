@@ -7,7 +7,7 @@ import { TelegramProvider } from '@/components/telegram-provider';
 import Script from 'next/script';
 import { RewardedAdProvider } from '@/hooks/use-rewarded-ad';
 import ClientRewardedAd from '@/components/shared/client-rewarded-ad';
-import MonetagAd from '@/components/shared/monetag-ad';
+// import MonetagAd from '@/components/shared/monetag-ad';
 
 
 export const metadata: Metadata = {
@@ -48,7 +48,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
-        <Script src='//libtl.com/sdk.js' data-zone='9631988' data-sdk='show_9631988' strategy="lazyOnload" data-cfasync='false'></Script>
+        {/* <Script src='//libtl.com/sdk.js' data-zone='9631988' data-sdk='show_9631988' strategy="lazyOnload" data-cfasync='false'></Script> */}
       </head>
       <body className="font-body antialiased min-h-screen bg-background">
         <ThemeProvider
@@ -61,7 +61,7 @@ export default function RootLayout({
             <RewardedAdProvider>
               {children}
               <ClientRewardedAd />
-              <MonetagAd />
+              {/* <MonetagAd /> */}
             </RewardedAdProvider>
           </TelegramProvider>
           <Toaster />

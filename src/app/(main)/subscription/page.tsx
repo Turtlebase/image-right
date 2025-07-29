@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useTelegram } from '@/components/telegram-provider';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const premiumFeatures = [
     { text: "Unlimited Scans", icon: Sparkles },
@@ -25,10 +26,17 @@ export default function SubscriptionPage() {
     const { toast } = useToast();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const { isPremium, setPremium } = useSubscription();
 
     const handlePurchase = () => {
+        if (isLoading) return;
+
         if (!webApp || !user) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Telegram user information not available. Please try again later.' });
+            toast({
+                variant: 'destructive',
+                title: 'Telegram Not Ready',
+                description: 'Telegram user information not available. Please try again in a moment.'
+            });
             return;
         }
 
@@ -36,34 +44,54 @@ export default function SubscriptionPage() {
 
         const payload = `premium-month-${user.id}-${Date.now()}`;
 
+        // This is the correct way to call showInvoice for Telegram Stars.
+        // The provider_token is intentionally left empty. Telegram's documentation
+        // confirms this is the correct procedure when using XTR (Stars) as the currency.
         webApp.showInvoice({
             title: 'ImageRights AI Premium',
             description: 'Unlock all premium features for one month.',
             payload: payload,
-            // The provider_token is intentionally left empty when using Telegram Stars.
-            // For real payment providers, you would get this token from @BotFather.
-            provider_token: '',
+            provider_token: '', // Must be empty for Stars
             currency: 'XTR',
             prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
         }, (status) => {
             if (status === 'paid') {
-                // The webhook will handle the premium status update.
-                // We can redirect to a success page for a better user experience,
-                // as the app will optimistically grant premium status.
+                // Optimistically set premium and redirect.
+                // The webhook will provide the official server-side confirmation.
+                setPremium();
                 router.push('/subscription/success');
-            } else if (status === 'failed') {
-                toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
-                 setIsLoading(false);
-            } else if (status === 'cancelled') {
-                 toast({ variant: 'default', title: 'Payment Cancelled', description: 'You have cancelled the payment process.' });
-                 setIsLoading(false);
-            }
-            // For 'pending' status, or any other status, we also stop loading and wait for webhook confirmation.
-            else {
+            } else {
+                // For 'failed', 'cancelled', or any other status, stop loading.
+                if (status === 'failed') {
+                    toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
+                }
                 setIsLoading(false);
             }
         });
     };
+
+    if (isPremium) {
+        return (
+            <div className="p-4 flex flex-col items-center justify-center h-full text-center">
+                <Card className="max-w-md w-full animate-in zoom-in-90 duration-500">
+                    <CardHeader>
+                        <div className="mx-auto bg-green-100 p-4 rounded-full w-fit">
+                            <CheckCircle className="h-10 w-10 text-green-600" />
+                        </div>
+                        <CardTitle className="text-2xl mt-4">You are a Premium User</CardTitle>
+                        <CardDescription>
+                            You already have unlimited access to all features. Thank you for your support!
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild size="lg" className="w-full">
+                            <Link href="/">Back to Home</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 animate-in fade-in-50 duration-500">
