@@ -18,6 +18,7 @@ const AnalyzeImageCopyrightInputSchema = z.object({
     .describe(
       "The image to be analyzed, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
     ),
+  isPremium: z.boolean().optional().default(false).describe("Whether the user has a premium subscription."),
 });
 export type AnalyzeImageCopyrightInput = z.infer<typeof AnalyzeImageCopyrightInputSchema>;
 
@@ -68,7 +69,7 @@ const analyzeImageCopyrightFlow = ai.defineFlow(
   },
   async (input) => {
     
-    const model = await getModel();
+    const model = await getModel(input.isPremium);
 
     const prompt = ai.definePrompt(
       {

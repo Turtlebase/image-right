@@ -99,7 +99,10 @@ export default function ScanPage() {
     setIsScanning(true);
     setScanResult(null);
     try {
-      const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
+      const result = await analyzeImageCopyright({ 
+        imageDataUri: imagePreview,
+        isPremium,
+      });
       
       if (!isPremium) {
         recordScan();

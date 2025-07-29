@@ -40,7 +40,8 @@ const generateSocialMediaPostFlow = ai.defineFlow(
   },
   async (input) => {
     
-    const model = await getModel();
+    // Social media post generation is a premium feature, so we always use the premium model.
+    const model = await getModel(true);
 
     const prompt = ai.definePrompt(
       {
