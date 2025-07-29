@@ -39,13 +39,16 @@ export default function SubscriptionPage() {
             title: 'ImageRights AI Premium',
             description: 'Unlock all premium features for one month.',
             payload: payload,
-            provider_token: '', // Leave empty for Stars
+            // provider_token is left empty when using Telegram Stars as the currency.
+            // For real payment providers like Stripe, you would get this token from @BotFather.
+            provider_token: '',
             currency: 'XTR',
             prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
         }, (status) => {
             if (status === 'paid') {
                 // The webhook will handle the premium status update.
-                // Redirect to a success page for a good user experience.
+                // We can redirect to a success page for a better user experience,
+                // as the app will optimistically grant premium status.
                 router.push('/subscription/success');
             } else if (status === 'failed') {
                 toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
@@ -54,7 +57,7 @@ export default function SubscriptionPage() {
                  toast({ variant: 'default', title: 'Payment Cancelled', description: 'You have cancelled the payment process.' });
                  setIsLoading(false);
             }
-            // For 'pending' status, we also stop loading and wait for webhook.
+            // For 'pending' status, we also stop loading and wait for the webhook confirmation.
             else {
                 setIsLoading(false);
             }
