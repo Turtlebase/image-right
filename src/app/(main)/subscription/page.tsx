@@ -17,7 +17,7 @@ const premiumFeatures = [
     { text: "No Ads", icon: Sparkles },
 ];
 
-const STAR_PRICE = 150;
+const STAR_PRICE = 400;
 
 export default function SubscriptionPage() {
     const { webApp, user } = useTelegram();
@@ -103,7 +103,7 @@ export default function SubscriptionPage() {
                             <Loader2 className="animate-spin" />
                         ) : (
                             <>
-                                Upgrade for 150 <Star className="ml-2 fill-yellow-400 text-yellow-400" />
+                                Upgrade for {STAR_PRICE} <Star className="ml-2 fill-yellow-400 text-yellow-400" />
                             </>
                         )}
                     </Button>
