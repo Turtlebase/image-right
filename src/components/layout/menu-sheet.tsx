@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Moon, Lock, FileText, MessageSquare, Info } from 'lucide-react';
+import { Moon, Lock, FileText, MessageSquare, Info, Sparkles } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface MenuSheetProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface MenuSheetProps {
 export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
     const { theme, setTheme } = useTheme();
     const [isMounted, setIsMounted] = useState(false);
+    const { isPremium } = useSubscription();
 
     useEffect(() => {
         setIsMounted(true);
@@ -40,6 +42,13 @@ export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
         </SheetHeader>
         <div className="py-4">
           <ul className="space-y-2">
+            {!isPremium && (
+                <li>
+                  <Button variant="default" className="w-full justify-center gap-3 p-2 h-12 text-base bg-gradient-to-r from-primary to-accent text-primary-foreground" asChild>
+                    <Link href="/subscription" onClick={handleLinkClick}><Sparkles className="w-5 h-5" /> Upgrade to Premium</Link>
+                  </Button>
+                </li>
+            )}
             <li className="flex items-center justify-between p-2 rounded-lg">
               <div className="flex items-center gap-3">
                 <Moon className="w-5 h-5 text-muted-foreground" />

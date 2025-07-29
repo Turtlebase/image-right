@@ -12,11 +12,12 @@ import { addScanToHistory } from '@/lib/history';
 import { useUsageStore } from '@/hooks/use-usage-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const FREE_SCAN_LIMIT = 5;
 const REWARDED_SCAN_LIMIT = 30; // 5 free + 25 rewarded
 
-type ScanStatus = 'can_scan_free' | 'can_scan_with_ad' | 'limit_reached';
+type ScanStatus = 'can_scan_free' | 'can_scan_with_ad' | 'limit_reached' | 'premium';
 
 export default function ScanPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -28,13 +29,17 @@ export default function ScanPage() {
   const { toast } = useToast();
   
   const { scansToday, lastScanDate, recordScan } = useUsageStore();
+  const { isPremium } = useSubscription();
   
   const showRewardedAd = useRewardedAd(state => state.showRewardedAd);
   const isAdLoading = useRewardedAd(state => state.isAdLoading);
 
   useEffect(() => {
     // Zustand's persistence is async, so we wait for rehydration
-    useUsageStore.persist.rehydrate().then(() => setIsInitialized(true));
+    Promise.all([
+      useUsageStore.persist.rehydrate(),
+      useSubscription.persist.rehydrate()
+    ]).then(() => setIsInitialized(true));
   }, []);
 
   useEffect(() => {
@@ -46,12 +51,14 @@ export default function ScanPage() {
   }, [isInitialized, lastScanDate]);
 
   const scanStatus = useMemo((): ScanStatus => {
+    if (isPremium) return 'premium';
     if (scansToday < FREE_SCAN_LIMIT) return 'can_scan_free';
     if (scansToday < REWARDED_SCAN_LIMIT) return 'can_scan_with_ad';
     return 'limit_reached';
-  }, [scansToday]);
+  }, [scansToday, isPremium]);
 
   const scansLeftText = useMemo(() => {
+    if (scanStatus === 'premium') return "You have unlimited scans.";
     if (scanStatus === 'can_scan_free') return `${FREE_SCAN_LIMIT - scansToday} free scans remaining`;
     if (scanStatus === 'can_scan_with_ad') return `${REWARDED_SCAN_LIMIT - scansToday} rewarded scans remaining`;
     return "You have used all your scans for today.";
@@ -93,8 +100,11 @@ export default function ScanPage() {
     setScanResult(null);
     try {
       const result = await analyzeImageCopyright({ imageDataUri: imagePreview });
-      // Only record the scan after a successful result is received.
-      recordScan();
+      
+      if (!isPremium) {
+        recordScan();
+      }
+
       const fullResult: ScanResultData = { ...result, imageUrl: imagePreview };
       setScanResult(fullResult);
       await addScanToHistory(fullResult);
@@ -111,7 +121,7 @@ export default function ScanPage() {
   }
 
   const handleScan = async () => {
-    if (scanStatus === 'can_scan_free') {
+    if (scanStatus === 'can_scan_free' || scanStatus === 'premium') {
       await performScan();
     } else if (scanStatus === 'can_scan_with_ad') {
       showRewardedAd({
@@ -183,6 +193,7 @@ export default function ScanPage() {
     const disabled = !imagePreview || isAdLoading;
     switch (scanStatus) {
         case 'can_scan_free':
+        case 'premium':
             return <Button
                 onClick={handleScan}
                 disabled={disabled}

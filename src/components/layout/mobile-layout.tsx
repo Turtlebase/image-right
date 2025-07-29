@@ -11,6 +11,7 @@ import UserProfile from './user-profile';
 import { useTelegram } from '../telegram-provider';
 import AppLogo from '../shared/logo';
 import dynamic from 'next/dynamic';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const ShufflingBannerAd = dynamic(() => import('../shared/shuffling-banner-ad'), { ssr: false });
 
@@ -26,6 +27,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const { user } = useTelegram();
+  const { isPremium } = useSubscription();
 
   return (
     <div className="flex flex-col h-screen w-full max-w-md mx-auto bg-background">
@@ -42,7 +44,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-y-auto pt-4 pb-[130px]">{children}</main>
 
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto">
-        <ShufflingBannerAd />
+        {!isPremium && <ShufflingBannerAd />}
         <footer className="h-20 px-4 pb-4">
           <div className="bg-background/80 backdrop-blur-lg border border-border rounded-2xl flex items-center justify-around h-full shadow-lg">
             {navItems.map((item) => (

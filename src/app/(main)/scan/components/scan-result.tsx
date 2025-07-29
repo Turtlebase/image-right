@@ -10,12 +10,12 @@ import AiAdvice from './ai-advice';
 import { User, Globe, Download, Share2, Info, FileQuestion, Loader2, Copy, Lock, Tv } from 'lucide-react';
 import { type AnalyzeImageCopyrightOutput } from '@/ai/flows/analyze-image-copyright';
 import { useToast } from "@/hooks/use-toast";
-import { useUsageStore } from '@/hooks/use-usage-store';
 import { useRewardedAd } from '@/hooks/use-rewarded-ad';
 import { Skeleton } from '@/components/ui/skeleton';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useTheme } from 'next-themes';
+import { useSubscription } from '@/hooks/useSubscription';
 
 
 export type ScanResultData = AnalyzeImageCopyrightOutput & {
@@ -28,24 +28,25 @@ interface ScanResultProps {
 
 export default function ScanResult({ data }: ScanResultProps): React.JSX.Element {
   const { toast } = useToast();
-  const [isInitialized, setIsInitialized] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isShareSupported, setIsShareSupported] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const { isPremium } = useSubscription();
+  const [isUnlocked, setIsUnlocked] = useState(isPremium);
   const showRewardedAd = useRewardedAd(state => state.showRewardedAd);
   const { theme } = useTheme();
-
-  useEffect(() => {
-    // Zustand's persistence is async, so we wait for rehydration
-    useUsageStore.persist.rehydrate().then(() => setIsInitialized(true));
-  }, []);
 
   useEffect(() => {
     if (typeof navigator.share !== 'undefined') {
       setIsShareSupported(true);
     }
   }, []);
+  
+  useEffect(() => {
+    if(isPremium) {
+      setIsUnlocked(true);
+    }
+  }, [isPremium]);
 
   const handleDownloadPdf = async () => {
     if (!reportRef.current) return;
@@ -139,16 +140,6 @@ export default function ScanResult({ data }: ScanResultProps): React.JSX.Element
       }
     });
   };
-
-  if (!isInitialized) {
-    return (
-      <div className="space-y-6 p-4">
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    );
-  }
 
   return (
     <>
