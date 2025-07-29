@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Moon, Lock, FileText, MessageSquare, Info, Sparkles } from 'lucide-react';
+import { Moon, Lock, FileText, MessageSquare, Info, Sparkles, LifeBuoy } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -61,6 +61,11 @@ export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
               />
             </li>
             <Separator className="my-2" />
+             <li>
+               <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
+                <Link href="/contact" onClick={handleLinkClick}><LifeBuoy className="w-5 h-5 text-muted-foreground" /> Support</Link>
+              </Button>
+            </li>
             <li>
               <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
                 <Link href="/privacy" onClick={handleLinkClick}><Lock className="w-5 h-5 text-muted-foreground" /> Privacy Policy</Link>
@@ -69,11 +74,6 @@ export function MenuSheet({ isOpen, onOpenChange }: MenuSheetProps) {
             <li>
               <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
                 <Link href="/terms" onClick={handleLinkClick}><FileText className="w-5 h-5 text-muted-foreground" /> Terms of Use</Link>
-              </Button>
-            </li>
-            <li>
-               <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-base" asChild>
-                <Link href="/contact" onClick={handleLinkClick}><MessageSquare className="w-5 h-5 text-muted-foreground" /> Contact Us</Link>
               </Button>
             </li>
             <li>

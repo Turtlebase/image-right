@@ -1,67 +1,63 @@
 
 import { NextRequest, NextResponse } from 'next/server';
+import TelegramBot from 'node-telegram-bot-api';
 
-/**
- * This is the webhook handler for Telegram payments.
- * When a user successfully pays with Stars, Telegram sends a notification here.
- *
- * To make this work, you must:
- * 1. Deploy your application to get a public URL.
- * 2. Go to @BotFather on Telegram.
- * 3. Select your bot, go to "Bot Settings" -> "Payments".
- * 4. Choose a payment provider (like Stripe, or "Telegram Stars" for just stars).
- * 5. Set the webhook URL to: https://<your-deployed-app-url>/api/telegram-webhook
- */
+// IMPORTANT: You must set this environment variable in your Vercel project settings.
+const token = process.env.TELEGRAM_BOT_TOKEN;
+
+if (!token) {
+  console.error('FATAL_ERROR: TELEGRAM_BOT_TOKEN is not set in environment variables.');
+  // In a real scenario, you might want to throw an error or handle this differently.
+}
+
+// We initialize the bot here but will use it inside the POST handler.
+// This approach is better for serverless environments.
+let bot: TelegramBot | null = null;
+if (token) {
+  bot = new TelegramBot(token);
+}
 
 export async function POST(req: NextRequest) {
+  if (!bot) {
+    return NextResponse.json({ status: 'error', message: 'Bot not initialized. TELEGRAM_BOT_TOKEN is missing.' }, { status: 500 });
+  }
+
   try {
     const body = await req.json();
 
-    // The `pre_checkout_query` is sent by Telegram to confirm you are ready to process the payment.
+    // 1. Handle Pre-Checkout Query (CRITICAL STEP)
+    // This is sent by Telegram when a user clicks the pay button.
+    // We MUST answer this query to allow the payment to proceed.
     if (body.pre_checkout_query) {
-      console.log('Received pre_checkout_query:', body.pre_checkout_query);
-      // You must answer this query to proceed with the payment.
-      // Here you could add logic to check if the product is available, etc.
-      // For now, we will just confirm we are ready.
+      const preCheckoutQuery = body.pre_checkout_query;
+      console.log('Received pre_checkout_query:', preCheckoutQuery.id);
+
+      // Answer the pre-checkout query to confirm we are ready.
+      await bot.answerPreCheckoutQuery(preCheckoutQuery.id, true);
       
-      // Note: The Telegram Bot API doesn't have a direct REST endpoint for `answerPreCheckoutQuery`.
-      // This action is typically performed using a bot library (like `node-telegram-bot-api` or `telegraf`).
-      // Since we don't have a full bot setup here, we acknowledge receipt and would rely on a bot framework
-      // to send the actual confirmation back to Telegram.
-      
-      return NextResponse.json({
-        status: 'ok',
-        message: 'Pre-checkout acknowledged. A bot framework would now call answerPreCheckoutQuery.'
-      });
+      console.log('Successfully answered pre_checkout_query.');
+      return NextResponse.json({ status: 'ok', message: 'Pre-checkout query answered.' });
     }
 
-    // The `successful_payment` message is sent after the user has paid.
+    // 2. Handle Successful Payment
+    // This is sent after the user has successfully paid.
     if (body.message && body.message.successful_payment) {
       const paymentInfo = body.message.successful_payment;
       console.log('Received successful_payment:', paymentInfo);
       
       const invoicePayload = paymentInfo.invoice_payload;
-      // Example payload: "premium-month-12345678-1678886400000"
       const userId = invoicePayload.split('-')[2];
 
       console.log(`Processing premium subscription for user ID: ${userId}`);
 
-      // =================================================================
-      // !! IMPORTANT !!
-      // In a real application, this is where you would securely grant the user
-      // premium status in your database.
-      //
-      // e.g., await db.collection('users').doc(userId).update({ isPremium: true, premiumExpiry: ... });
-      //
-      // Since we don't have a database, the client-side optimistally sets
-      // premium status on the success page. This webhook serves as the necessary
-      // server-side confirmation point for Telegram.
-      // =================================================================
+      // In a real application, you would now grant premium status in your database.
+      // e.g., await db.users.update({ where: { id: userId }, data: { isPremium: true } });
 
       return NextResponse.json({ status: 'ok', message: 'Payment processed successfully.' });
     }
 
-    // If the request is not a pre_checkout_query or successful_payment, ignore it.
+    // If the request is not a type we handle, ignore it.
+    console.log('Received a Telegram update that is not a pre_checkout_query or successful_payment.');
     return NextResponse.json({ status: 'ignored', message: 'Not a relevant Telegram update.' });
 
   } catch (error) {

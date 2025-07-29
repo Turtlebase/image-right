@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Star, Sparkles, Bot } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Star, Sparkles, Bot, LifeBuoy } from 'lucide-react';
 import Link from 'next/link';
 import { useTelegram } from '@/components/telegram-provider';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ const premiumFeatures = [
     { text: "AI Social Media Post Generation", icon: Bot },
     { text: "Unlimited Scan History", icon: Sparkles },
     { text: "No Ads", icon: Sparkles },
+    { text: "Priority Support", icon: LifeBuoy },
 ];
 
 const STAR_PRICE = 400;
@@ -35,7 +36,7 @@ export default function SubscriptionPage() {
             toast({
                 variant: 'destructive',
                 title: 'Telegram Not Ready',
-                description: 'Telegram user information not available. Please try again in a moment.'
+                description: 'Telegram user information not available. Please restart the app.'
             });
             return;
         }
@@ -45,8 +46,8 @@ export default function SubscriptionPage() {
         const payload = `premium-month-${user.id}-${Date.now()}`;
 
         try {
-            // As per Telegram's documentation for paying with Stars (XTR currency),
-            // the `provider_token` field MUST NOT be included in the request.
+            // As per Telegram's documentation, for `XTR` (Stars),
+            // the `provider_token` field MUST NOT be included.
             webApp.showInvoice({
                 title: 'ImageRights AI Premium',
                 description: 'Unlock all premium features for one month.',
@@ -54,17 +55,19 @@ export default function SubscriptionPage() {
                 currency: 'XTR',
                 prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
             }, (status) => {
-                setIsLoading(false); // Reset loading state regardless of outcome
-                
+                // This callback handles the result of the invoice pop-up.
+                // The actual premium grant is handled by the server webhook.
                 if (status === 'paid') {
                     // Optimistically set premium and redirect.
-                    // The webhook will provide the official server-side confirmation.
+                    // The webhook provides the official server-side confirmation.
                     setPremium();
                     router.push('/subscription/success');
                 } else if (status === 'failed') {
                     toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
                 }
-                // 'cancelled' or other statuses do not need a specific toast message.
+                
+                // For any other status ('cancelled', 'pending', etc.), we just reset the loading state.
+                setIsLoading(false);
             });
         } catch (error) {
             setIsLoading(false);
