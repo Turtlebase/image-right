@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import TelegramBot from 'node-telegram-bot-api';
 
-// Use the payment bot token for the webhook
 const token = process.env.TELEGRAM_PAYMENT_BOT_TOKEN;
 const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
 
@@ -14,58 +13,58 @@ if (!secret) {
 }
 
 let bot: TelegramBot | null = null;
+
 if (token) {
   bot = new TelegramBot(token);
+
+  // Listener for Pre-Checkout Queries. This is the crucial step.
+  // Telegram sends this query to your bot when a user clicks the pay button.
+  // You must answer it within 10 seconds.
+  bot.on('pre_checkout_query', (query) => {
+    console.log(`Received pre_checkout_query from user ${query.from.id} for ${query.total_amount} ${query.currency}`);
+    // Answer the query to confirm that you are ready to process the payment.
+    bot.answerPreCheckoutQuery(query.id, true).catch((error) => {
+        console.error('Failed to answer pre_checkout_query:', error);
+    });
+  });
+
+  // Listener for successful payments.
+  bot.on('successful_payment', (msg) => {
+    console.log('Received successful_payment:', msg.successful_payment);
+    const userId = msg.from?.id;
+    const payload = msg.successful_payment.invoice_payload;
+    console.log(`Payment successful for user ${userId}. Payload: ${payload}`);
+    // Here you would typically grant the user premium access in your database.
+  });
+
+} else {
+    console.error("Bot could not be initialized. TELEGRAM_PAYMENT_BOT_TOKEN is missing.");
 }
 
+
 export async function POST(req: NextRequest) {
+  // 1. Verify the secret token
+  const secretTokenHeader = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
+  if (secret && secretTokenHeader !== secret) {
+    console.warn('Webhook received request with invalid secret token.');
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+
+  if (!bot) {
+    console.error('Webhook POST failed: Bot not initialized.');
+    return NextResponse.json({ status: 'error', message: 'Bot not initialized on server.' }, { status: 500 });
+  }
+  
   try {
-    // 1. Verify the secret token
-    const secretTokenHeader = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
-    if (secret && secretTokenHeader !== secret) {
-      console.warn('Webhook received request with invalid secret token.');
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
-    if (!bot) {
-      return NextResponse.json({ status: 'error', message: 'Bot not initialized. TELEGRAM_PAYMENT_BOT_TOKEN is missing.' }, { status: 500 });
-    }
-
     const body = await req.json();
 
-    // 2. Handle Pre-Checkout Query (CRITICAL STEP)
-    if (body.pre_checkout_query) {
-      const preCheckoutQuery = body.pre_checkout_query;
-      console.log('Received pre_checkout_query:', preCheckoutQuery.id);
+    // 2. Process the update using the library
+    // This will trigger the .on('pre_checkout_query', ...) and .on('successful_payment', ...) listeners above.
+    bot.processUpdate(body);
 
-      // Answer the pre-checkout query to confirm we are ready.
-      // This is what allows the payment sheet to open for the user.
-      await bot.answerPreCheckoutQuery(preCheckoutQuery.id, true);
-      
-      console.log('Successfully answered pre_checkout_query.');
-      return NextResponse.json({ status: 'ok', message: 'Pre-checkout query answered.' });
-    }
-
-    // 3. Handle Successful Payment
-    if (body.message && body.message.successful_payment) {
-      const paymentInfo = body.message.successful_payment;
-      console.log('Received successful_payment:', paymentInfo);
-      
-      const invoicePayload = paymentInfo.invoice_payload;
-      // Example payload: `premium-month-USER_ID-TIMESTAMP`
-      const userId = invoicePayload.split('-')[2]; 
-
-      console.log(`Processing premium subscription for user ID: ${userId}`);
-
-      // In a real application, you would now grant premium status in your database.
-      // For this app, we manage state on the client, but this log confirms the backend process.
-
-      return NextResponse.json({ status: 'ok', message: 'Payment processed successfully.' });
-    }
-
-    // If the request is not a type we handle, ignore it.
-    console.log('Received a Telegram update that is not a pre_checkout_query or successful_payment.');
-    return NextResponse.json({ status: 'ignored', message: 'Not a relevant Telegram update.' });
+    // 3. Respond to Telegram immediately
+    // Telegram doesn't care what we send back here, only that it gets a 200 OK response to know we've received the update.
+    return NextResponse.json({ status: 'ok' });
 
   } catch (error) {
     console.error('Error processing Telegram webhook:', error);
