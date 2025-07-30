@@ -29,8 +29,8 @@ export default function SubscriptionPage() {
     const [isLoading, setIsLoading] = useState(false);
     const { isPremium, setPremium } = useSubscription();
 
-    const handlePurchase = () => {
-        if (!webApp || !user || isLoading) {
+    const handlePurchase = async () => {
+        if (!webApp || !user) {
             toast({
                 variant: 'destructive',
                 title: 'Telegram Not Ready',
@@ -40,36 +40,25 @@ export default function SubscriptionPage() {
         }
 
         setIsLoading(true);
-
         const payload = `premium-month-${user.id}-${Date.now()}`;
 
-        try {
-            webApp.showInvoice({
-                title: 'ImageRights AI Premium',
-                description: 'Unlock all premium features for one month.',
-                payload: payload,
-                currency: 'XTR',
-                prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
-            }, (status) => {
-                if (status === 'paid') {
-                    setPremium();
-                    router.push('/subscription/success');
-                } else if (status === 'failed') {
-                    toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
-                }
-                
-                // For any other status ('cancelled', 'pending', etc.), we just reset the loading state.
-                setIsLoading(false);
-            });
-        } catch (error) {
+        webApp.showInvoice({
+            title: 'ImageRights AI Premium',
+            description: 'Unlock all premium features for one month.',
+            payload: payload,
+            currency: 'XTR',
+            prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
+        }, (status) => {
+            if (status === 'paid') {
+                setPremium();
+                router.push('/subscription/success');
+            } else if (status === 'failed') {
+                toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
+            }
+            
+            // For any other status ('cancelled', 'pending', etc.), we just reset the loading state.
             setIsLoading(false);
-            console.error("Error showing invoice:", error);
-            toast({
-                variant: 'destructive',
-                title: 'An Error Occurred',
-                description: 'Could not initiate the payment process. Please try again later.'
-            });
-        }
+        });
     };
 
     if (isPremium) {
