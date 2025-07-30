@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Star, Sparkles, Bot, LifeBuoy } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Star, Sparkles, Bot, LifeBuoy, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useTelegram } from '@/components/telegram-provider';
 import { useToast } from '@/hooks/use-toast';
@@ -28,10 +28,18 @@ export default function SubscriptionPage() {
     const { toast } = useToast();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [isTelegramReady, setIsTelegramReady] = useState(false);
     const { isPremium, setPremium } = useSubscription();
 
+    useEffect(() => {
+        if (webApp) {
+            webApp.ready();
+            setIsTelegramReady(true);
+        }
+    }, [webApp]);
+
     const handlePurchase = () => {
-        if (!webApp || !user) {
+        if (!isTelegramReady || !user) {
             toast({
                 variant: 'destructive',
                 title: 'Telegram Not Ready',
@@ -64,6 +72,7 @@ export default function SubscriptionPage() {
                 prices: [{ label: "1 Month Premium", amount: STAR_PRICE }],
               },
               (status) => {
+                setIsLoading(false); // Reset loading state in all callback scenarios
                 if (status === "paid") {
                   setPremium();
                   router.push("/subscription/success");
@@ -74,8 +83,6 @@ export default function SubscriptionPage() {
                     description: "Your payment could not be processed. Please try again.",
                   });
                 }
-                // Always set loading to false in the callback
-                setIsLoading(false);
               }
             );
         } catch (error) {
@@ -108,7 +115,21 @@ export default function SubscriptionPage() {
         );
     }
 
-    const isPurchaseDisabled = !webApp || isLoading;
+    const isPurchaseDisabled = !isTelegramReady || isLoading;
+
+    const getButtonContent = () => {
+        if (isLoading) {
+            return <Loader2 className="animate-spin" />;
+        }
+        if (!isTelegramReady) {
+            return 'Initializing...';
+        }
+        return (
+            <>
+                Upgrade for {STAR_PRICE} <Star className="ml-2 fill-yellow-400 text-yellow-400" />
+            </>
+        );
+    };
 
     return (
         <div className="p-4 animate-in fade-in-50 duration-500">
@@ -145,15 +166,7 @@ export default function SubscriptionPage() {
                         onClick={handlePurchase}
                         disabled={isPurchaseDisabled}
                     >
-                        {isLoading ? (
-                            <Bot className="animate-spin" />
-                        ) : !webApp ? (
-                            'Initializing...'
-                        ) : (
-                            <>
-                                Upgrade for {STAR_PRICE} <Star className="ml-2 fill-yellow-400 text-yellow-400" />
-                            </>
-                        )}
+                        {getButtonContent()}
                     </Button>
                 </CardFooter>
             </Card>
