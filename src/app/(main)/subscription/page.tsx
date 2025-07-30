@@ -30,7 +30,7 @@ export default function SubscriptionPage() {
     const [isLoading, setIsLoading] = useState(false);
     const { isPremium, setPremium } = useSubscription();
 
-    const handlePurchase = async () => {
+    const handlePurchase = () => {
         if (!webApp || !user) {
             toast({
                 variant: 'destructive',
@@ -51,27 +51,35 @@ export default function SubscriptionPage() {
         }
 
         setIsLoading(true);
-        const payload = `premium-month-${user.id}-${Date.now()}`;
+        try {
+            const payload = `premium-month-${user.id}-${Date.now()}`;
 
-        webApp.showInvoice({
-            title: 'ImageRights AI Premium',
-            description: 'Unlock all premium features for one month.',
-            payload: payload,
-            provider_token: PAYMENT_BOT_TOKEN,
-            currency: 'XTR',
-            prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
-        }, (status) => {
-            if (status === 'paid') {
-                setPremium();
-                router.push('/subscription/success');
-            } else {
-                 if (status === 'failed') {
+            webApp.showInvoice({
+                title: 'ImageRights AI Premium',
+                description: 'Unlock all premium features for one month.',
+                payload: payload,
+                provider_token: PAYMENT_BOT_TOKEN,
+                currency: 'XTR',
+                prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
+            }, (status) => {
+                if (status === 'paid') {
+                    setPremium();
+                    router.push('/subscription/success');
+                } else if (status === 'failed') {
                     toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
-                 }
-                // Reset loading state for any other status ('cancelled', 'pending', etc.)
+                }
+                // For 'cancelled', 'pending', etc., we don't show a message, the UI just resets.
+            });
+        } catch (error) {
+             console.error("Error showing invoice:", error);
+             toast({ variant: 'destructive', title: 'Error', description: 'Could not initiate the payment process.' });
+        } finally {
+             // Use a small timeout to allow the Telegram UI to fully appear before resetting the button state.
+             // This helps prevent a brief flash of the button returning to its normal state.
+             setTimeout(() => {
                 setIsLoading(false);
-            }
-        });
+             }, 1000);
+        }
     };
 
     if (isPremium) {
