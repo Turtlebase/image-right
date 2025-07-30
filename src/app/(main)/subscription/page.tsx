@@ -21,6 +21,7 @@ const premiumFeatures = [
 ];
 
 const STAR_PRICE = 400;
+const PAYMENT_BOT_TOKEN = process.env.NEXT_PUBLIC_TELEGRAM_PAYMENT_BOT_TOKEN;
 
 export default function SubscriptionPage() {
     const { webApp, user } = useTelegram();
@@ -39,26 +40,47 @@ export default function SubscriptionPage() {
             return;
         }
 
+        if (!PAYMENT_BOT_TOKEN) {
+            toast({
+                variant: 'destructive',
+                title: 'Configuration Error',
+                description: 'Payment system is not configured. Please contact support.'
+            });
+            console.error("NEXT_PUBLIC_TELEGRAM_PAYMENT_BOT_TOKEN is not set.");
+            return;
+        }
+
         setIsLoading(true);
         const payload = `premium-month-${user.id}-${Date.now()}`;
 
-        webApp.showInvoice({
-            title: 'ImageRights AI Premium',
-            description: 'Unlock all premium features for one month.',
-            payload: payload,
-            currency: 'XTR',
-            prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
-        }, (status) => {
-            if (status === 'paid') {
-                setPremium();
-                router.push('/subscription/success');
-            } else if (status === 'failed') {
-                toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
-            }
-            
-            // For any other status ('cancelled', 'pending', etc.), we just reset the loading state.
+        try {
+            webApp.showInvoice({
+                title: 'ImageRights AI Premium',
+                description: 'Unlock all premium features for one month.',
+                payload: payload,
+                provider_token: PAYMENT_BOT_TOKEN,
+                currency: 'XTR',
+                prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
+            }, (status) => {
+                if (status === 'paid') {
+                    setPremium();
+                    router.push('/subscription/success');
+                } else if (status === 'failed') {
+                    toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
+                }
+                
+                // Reset loading state for any other status ('cancelled', 'pending', etc.)
+                setIsLoading(false);
+            });
+        } catch (error) {
+            console.error("showInvoice error:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Payment Error',
+                description: 'Could not initiate the payment process. Please try again.',
+            });
             setIsLoading(false);
-        });
+        }
     };
 
     if (isPremium) {

@@ -2,16 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import TelegramBot from 'node-telegram-bot-api';
 
-// IMPORTANT: You must set this environment variable in your Vercel project settings.
-const token = process.env.TELEGRAM_BOT_TOKEN;
+// Use the payment bot token for the webhook
+const token = process.env.TELEGRAM_PAYMENT_BOT_TOKEN;
 
 if (!token) {
-  console.error('FATAL_ERROR: TELEGRAM_BOT_TOKEN is not set in environment variables.');
-  // In a real scenario, you might want to throw an error or handle this differently.
+  console.error('FATAL_ERROR: TELEGRAM_PAYMENT_BOT_TOKEN is not set in environment variables.');
 }
 
-// We initialize the bot here but will use it inside the POST handler.
-// This approach is better for serverless environments.
 let bot: TelegramBot | null = null;
 if (token) {
   bot = new TelegramBot(token);
@@ -19,20 +16,19 @@ if (token) {
 
 export async function POST(req: NextRequest) {
   if (!bot) {
-    return NextResponse.json({ status: 'error', message: 'Bot not initialized. TELEGRAM_BOT_TOKEN is missing.' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Bot not initialized. TELEGRAM_PAYMENT_BOT_TOKEN is missing.' }, { status: 500 });
   }
 
   try {
     const body = await req.json();
 
     // 1. Handle Pre-Checkout Query (CRITICAL STEP)
-    // This is sent by Telegram when a user clicks the pay button.
-    // We MUST answer this query to allow the payment to proceed.
     if (body.pre_checkout_query) {
       const preCheckoutQuery = body.pre_checkout_query;
       console.log('Received pre_checkout_query:', preCheckoutQuery.id);
 
       // Answer the pre-checkout query to confirm we are ready.
+      // This is what allows the payment sheet to open for the user.
       await bot.answerPreCheckoutQuery(preCheckoutQuery.id, true);
       
       console.log('Successfully answered pre_checkout_query.');
@@ -40,7 +36,6 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Handle Successful Payment
-    // This is sent after the user has successfully paid.
     if (body.message && body.message.successful_payment) {
       const paymentInfo = body.message.successful_payment;
       console.log('Received successful_payment:', paymentInfo);
