@@ -53,34 +53,25 @@ export default function SubscriptionPage() {
         setIsLoading(true);
         const payload = `premium-month-${user.id}-${Date.now()}`;
 
-        try {
-            webApp.showInvoice({
-                title: 'ImageRights AI Premium',
-                description: 'Unlock all premium features for one month.',
-                payload: payload,
-                provider_token: PAYMENT_BOT_TOKEN,
-                currency: 'XTR',
-                prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
-            }, (status) => {
-                if (status === 'paid') {
-                    setPremium();
-                    router.push('/subscription/success');
-                } else if (status === 'failed') {
+        webApp.showInvoice({
+            title: 'ImageRights AI Premium',
+            description: 'Unlock all premium features for one month.',
+            payload: payload,
+            provider_token: PAYMENT_BOT_TOKEN,
+            currency: 'XTR',
+            prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
+        }, (status) => {
+            if (status === 'paid') {
+                setPremium();
+                router.push('/subscription/success');
+            } else {
+                 if (status === 'failed') {
                     toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
-                }
-                
+                 }
                 // Reset loading state for any other status ('cancelled', 'pending', etc.)
                 setIsLoading(false);
-            });
-        } catch (error) {
-            console.error("showInvoice error:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Payment Error',
-                description: 'Could not initiate the payment process. Please try again.',
-            });
-            setIsLoading(false);
-        }
+            }
+        });
     };
 
     if (isPremium) {
