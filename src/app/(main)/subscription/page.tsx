@@ -83,6 +83,8 @@ export default function SubscriptionPage() {
                     description: "Your payment could not be processed. Please try again.",
                   });
                 }
+                // We don't need to handle 'cancelled' or other statuses explicitly,
+                // as we just need to re-enable the button.
               }
             );
         } catch (error) {
