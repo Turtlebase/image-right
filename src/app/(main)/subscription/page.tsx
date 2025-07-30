@@ -52,8 +52,6 @@ export default function SubscriptionPage() {
 
         setIsLoading(true);
         try {
-            // The payload is a unique identifier for the transaction.
-            // It's required by Telegram.
             const payload = `premium-month-${user.id}-${Date.now()}`;
 
             webApp.showInvoice({
@@ -70,14 +68,11 @@ export default function SubscriptionPage() {
                 } else if (status === 'failed') {
                     toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
                 }
-                // For 'cancelled', 'pending', etc., we don't show a message, the UI just resets.
             });
         } catch (error) {
              console.error("Error showing invoice:", error);
              toast({ variant: 'destructive', title: 'Error', description: 'Could not initiate the payment process.' });
         } finally {
-             // Use a small timeout to allow the Telegram UI to fully appear before resetting the button state.
-             // This helps prevent a brief flash of the button returning to its normal state.
              setTimeout(() => {
                 setIsLoading(false);
              }, 1000);
@@ -138,6 +133,11 @@ export default function SubscriptionPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
+                    {/* The payment button is temporarily hidden until Stars are available */}
+                    <div className="w-full text-center p-4 bg-muted rounded-lg">
+                        <p className="text-muted-foreground">Telegram Stars payments are not yet available for this bot. Please check back later.</p>
+                    </div>
+                    {/* 
                     <Button 
                         size="lg" 
                         className="w-full rounded-full text-lg h-14 font-bold" 
@@ -154,6 +154,7 @@ export default function SubscriptionPage() {
                             </>
                         )}
                     </Button>
+                    */}
                 </CardFooter>
             </Card>
         </div>
