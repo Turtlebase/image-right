@@ -49,33 +49,39 @@ export default function SubscriptionPage() {
             console.error("NEXT_PUBLIC_TELEGRAM_PAYMENT_BOT_TOKEN is not set.");
             return;
         }
-
+        
         setIsLoading(true);
         try {
             const payload = `premium-month-${user.id}-${Date.now()}`;
 
-            webApp.showInvoice({
-                title: 'ImageRights AI Premium',
-                description: 'Unlock all premium features for one month.',
+            webApp.showInvoice(
+              {
+                title: "ImageRights AI Premium",
+                description: "Unlock all premium features for one month.",
                 payload: payload,
                 provider_token: PAYMENT_BOT_TOKEN,
-                currency: 'XTR',
-                prices: [{ label: '1 Month Premium', amount: STAR_PRICE }],
-            }, (status) => {
-                if (status === 'paid') {
-                    setPremium();
-                    router.push('/subscription/success');
-                } else if (status === 'failed') {
-                    toast({ variant: 'destructive', title: 'Payment Failed', description: 'Your payment could not be processed. Please try again.' });
+                currency: "XTR",
+                prices: [{ label: "1 Month Premium", amount: STAR_PRICE }],
+              },
+              (status) => {
+                if (status === "paid") {
+                  setPremium();
+                  router.push("/subscription/success");
+                } else if (status === "failed") {
+                  toast({
+                    variant: "destructive",
+                    title: "Payment Failed",
+                    description: "Your payment could not be processed. Please try again.",
+                  });
                 }
-            });
+                // Always set loading to false in the callback
+                setIsLoading(false);
+              }
+            );
         } catch (error) {
              console.error("Error showing invoice:", error);
              toast({ variant: 'destructive', title: 'Error', description: 'Could not initiate the payment process.' });
-        } finally {
-             setTimeout(() => {
-                setIsLoading(false);
-             }, 1000);
+             setIsLoading(false);
         }
     };
 
@@ -133,11 +139,6 @@ export default function SubscriptionPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    {/* The payment button is temporarily hidden until Stars are available */}
-                    <div className="w-full text-center p-4 bg-muted rounded-lg">
-                        <p className="text-muted-foreground">Telegram Stars payments are not yet available for this bot. Please check back later.</p>
-                    </div>
-                    {/* 
                     <Button 
                         size="lg" 
                         className="w-full rounded-full text-lg h-14 font-bold" 
@@ -154,7 +155,6 @@ export default function SubscriptionPage() {
                             </>
                         )}
                     </Button>
-                    */}
                 </CardFooter>
             </Card>
         </div>
