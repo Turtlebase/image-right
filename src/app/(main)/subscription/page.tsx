@@ -52,6 +52,8 @@ export default function SubscriptionPage() {
 
         setIsLoading(true);
         try {
+            // The payload is a unique identifier for the transaction.
+            // It's required by Telegram.
             const payload = `premium-month-${user.id}-${Date.now()}`;
 
             webApp.showInvoice({
