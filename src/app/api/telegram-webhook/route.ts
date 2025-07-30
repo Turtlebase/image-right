@@ -19,18 +19,18 @@ if (token) {
 }
 
 export async function POST(req: NextRequest) {
-  // 1. Verify the secret token
-  const secretTokenHeader = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
-  if (secret && secretTokenHeader !== secret) {
-    console.warn('Webhook received request with invalid secret token.');
-    return new NextResponse('Unauthorized', { status: 401 });
-  }
-
-  if (!bot) {
-    return NextResponse.json({ status: 'error', message: 'Bot not initialized. TELEGRAM_PAYMENT_BOT_TOKEN is missing.' }, { status: 500 });
-  }
-
   try {
+    // 1. Verify the secret token
+    const secretTokenHeader = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
+    if (secret && secretTokenHeader !== secret) {
+      console.warn('Webhook received request with invalid secret token.');
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    if (!bot) {
+      return NextResponse.json({ status: 'error', message: 'Bot not initialized. TELEGRAM_PAYMENT_BOT_TOKEN is missing.' }, { status: 500 });
+    }
+
     const body = await req.json();
 
     // 2. Handle Pre-Checkout Query (CRITICAL STEP)
